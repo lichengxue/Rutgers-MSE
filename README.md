@@ -8,14 +8,10 @@ This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, 
 
 <p align="center">
   <img width="80%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png" />
+  Figure 1 - Black sea bass (<i>Centropristis striata</i>) - Image credit: NOAA Fisheries
 </p>
 
 
-<div style="text-align: center;">
-    <img width="75%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png">
-</div>
-
-![Image of black sea bass](https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png)
 **Figure 1 - Black sea bass (*Centropristis striata*) - Image credit: NOAA Fisheries**
 
 ------------------------------------------------------------------------
