@@ -6,6 +6,9 @@
 #
 # Author: Chengxue Li
 #
+# WARNING: TRY TO KEEP THIS FILE AS IS. MAKE A COPY AND DO CHANGES 
+#          IF YOU WANT TO CONDUCT EXPERIMENTS/SIMULATIONS
+#
 # Description:
 # This script demonstrates the full workflow for a Management Strategy
 # Evaluation (MSE) using the 'wham' and 'whamMSE' packages. It covers:
