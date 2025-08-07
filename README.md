@@ -7,15 +7,18 @@ A research collaboration between NOAA and Rutgers University.
 This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, which is built upon the [Woods Hole Assessment Model (WHAM)](https://timjmiller.github.io/wham/).
 
 <p align="center">
-  <img width="80%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png" />
+  <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png" />
 </p>
+
 **Figure 1 - Black sea bass (*Centropristis striata*) - Image credit: NOAA Fisheries**
 
 ------------------------------------------------------------------------
 
 ### Questions
 
-For more details, please directly contact the developers: \* **Chengxue Li** (whamMSE Developer): `chengxue.li@noaa.gov` \* **Jeewantha Bandara** (Collaborator): `jeewantha.bandara@rutgers.edu`
+For more details, please directly contact the developers:
+- **Chengxue Li** (whamMSE Developer): `chengxue.li@noaa.gov`
+- **Jeewantha Bandara** (Collaborator): `jeewantha.bandara@rutgers.edu`
 
 ------------------------------------------------------------------------
 
