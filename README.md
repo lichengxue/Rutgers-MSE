@@ -6,6 +6,11 @@ A research collaboration between NOAA and Rutgers University.
 
 This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, which is built upon the [Woods Hole Assessment Model (WHAM)](https://timjmiller.github.io/wham/).
 
+<p align="center">
+  <img width="80%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png" />
+</p>
+
+
 <div style="text-align: center;">
     <img width="75%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png">
 </div>
