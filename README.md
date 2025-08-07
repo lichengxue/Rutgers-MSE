@@ -1,10 +1,14 @@
 # Rutgers-MSE (A Climate-informed Management Strategy Evaluation for Black Sea Bass in Northeast US)
 
-*Investigating the impacts of climate change on fisheries management using Management Strategy Evaluation (MSE).*\
+*Investigating the impacts of climate change on fisheries management using Management Strategy Evaluation (MSE).*
 
 A research collaboration between NOAA and Rutgers University.
 
 This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, which is built upon the [Woods Hole Assessment Model (WHAM)](https://timjmiller.github.io/wham/).
+
+<div style="text-align: center;">
+    <img width="75%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png">
+</div>
 
 ![Image of black sea bass](https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png)
 **Figure 1 - Black sea bass (*Centropristis striata*) - Image credit: NOAA Fisheries**
