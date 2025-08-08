@@ -8,6 +8,8 @@ This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, 
 
 <p align="center">
   <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/black_sea_bass_banner_image_noaa_fisheries.png" />
+  <br>
+  Figure 1 - Black sea bass (<i>Centropristis striata</i> - Image credit: NOAA Fisheries)
 </p>
 
 **Figure 1 - Black sea bass (*Centropristis striata*) - Image credit: NOAA Fisheries**
@@ -21,8 +23,9 @@ This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, 
 | wham    	| 2.1.0.9002 	|
 | whamMSE 	| 1.0.0      	|
 
-> To install `wham` and `whamMSE`, please follow the guidelines set [here](https://lichengxue.github.io/whamMSE/01.Installation.html)
-> Please note that getting `TMB` installed; a wham dependency might be a little tricky.
+> To install `wham` and `whamMSE`, please follow the guidelines set [here](https://lichengxue.github.io/whamMSE/01.Installation.html).
+>
+> Please note that getting `TMB` installed; a `wham` dependency might be a little tricky.
 
 ------------------------------------------------------------------------
 
