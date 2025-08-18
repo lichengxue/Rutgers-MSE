@@ -104,8 +104,8 @@ for (age in 1:8) {
 # Pointers to assign the correct WAA matrix to fleets, indices, SSB, and M
 user_waa$waa_pointer_fleets <- 1:4
 user_waa$waa_pointer_indices <- 5:6
-user_waa$waa_pointer_ssb <- 7:8
-user_waa$waa_pointer_M <- 7:8
+user_waa$waa_pointer_ssb <- 7:8 # The stock itself
+user_waa$waa_pointer_M <- 7:8 # The stock itself
 
 
 # 3b. Maturity-at-Age (MAA) ----
@@ -119,8 +119,9 @@ user_maa <- rbind(
 # 3c. Fleet and Survey Information ----
 # Define which fleets/surveys operate in which regions and specify their
 # associated observation error models.
+# 
 # Fleet Information
-fleet_regions <- c(1, 1, 2, 2)
+fleet_regions <- c(1, 1, 2, 2) # Commercial, Recreational, Commercial, Recreational
 catch_Neff <- c(50, 50, 50, 50) # Effective sample size for age comps
 catch_cv <- c(0.05, 0.15, 0.05, 0.15) # CV for total catch
 
@@ -197,9 +198,9 @@ move$mean_model <- matrix("stock_constant", 2, 1)
 # 4d. Configure Numbers-at-Age (NAA) Dynamics ----
 # Define process errors for recruitment and survival. Here we assume recruitment
 # is random around a mean (density-independent).
-sigma <- "rec+1"
-re_cor <- "iid"
-ini.opt <- "age-specific-fe"
+sigma <- "rec+1" # Full state-space model where all numbers at age are random effects
+re_cor <- "iid" # iid - Independent and identically distributed covariate
+ini.opt <- "age-specific-fe" # Need to figure out what this means....
 sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
 sigma_vals[, , 1] <- 0.75 # Recruitment sigma
 
@@ -247,7 +248,8 @@ sel <- list(
 # 5a. Prepare Final `wham` Input ----
 # This critical step gathers all configurations into a single input list.
 input <- prepare_wham_input(
-  basic_info = basic_info, NAA_re = NAA_re,
+  basic_info = basic_info, 
+  NAA_re = NAA_re,
   move = move,
   M = M,
   selectivity = sel,
@@ -273,10 +275,10 @@ for (i in 1:n_regions) {
 # 5c. Generate the Operating Model Object ----
 # We use `fit_wham` with `do.fit = FALSE` to create the OM structure without
 # fitting it to data. This defines our "true" simulated world.
-random <- input$random # Identify which processes are random effects
+random <- input$random # Identify which processes are random effects - It's Numbers at age
 input$random <- NULL   # Nullify so inner optimization won't change simulated REs
 om <- fit_wham(input, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
-
+# do.brps - Calculate and report biological reference points
 
 # --- 6. MSE CONFIGURATION & EXECUTION ----
 
@@ -300,7 +302,7 @@ print(assess.years)
 # long time to run. It is wrapped in `if (FALSE)` to prevent accidental execution.
 # Change to `if (TRUE)` to run the simulation.
 #
-if (FALSE) {
+if (TRUE) {
   
   # Generate a single realization of the OM (with one set of random effects)
   om_with_data <- update_om_fn(om, seed = 123, random = random)
@@ -314,7 +316,7 @@ if (FALSE) {
   # Specify the Harvest Control Rule (HCR)
   hcr <- list()
   hcr$hcr.type <- 1
-  hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75)
+  hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% SPR
   
   # Execute the MSE loop for one realization
   mod <- loop_through_fn(
