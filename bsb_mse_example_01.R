@@ -315,7 +315,7 @@ if (TRUE) {
   
   # Specify the Harvest Control Rule (HCR)
   hcr <- list()
-  hcr$hcr.type <- 1
+  hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
   hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% SPR
   
   # Execute the MSE loop for one realization
@@ -336,7 +336,7 @@ if (TRUE) {
     assess_years = assess.years,
     assess_interval = assess.interval,
     base_years = base.years,
-    year.use = 30,
+    year.use = 35,
     add.years = TRUE,
     seed = 123,
     hcr = hcr,
