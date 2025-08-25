@@ -15,4 +15,53 @@ between each other.
 
 Issues related to `bsb_mse_example_01.R` have been fixed. There was an error when 
 running the MSE loop (`loop_through_fn`) resulting in non-convergence. This was due to 
-not using all the years in the 
+not using all the years from 1989 to 2023 to inform the estimation model. 
+
+## 08/25/2025 log
+
+To store all model runs, I'm creating a Report output directory. The file structure 
+will be as follows. This will allow for better logging of model settings and 
+model error and warning logs for all MSE runs.
+
+Ran a version of `bsb_mse_example_01.R` with `MSE_years` set to _20_. This gave rise 
+to a number of warnings shown below.
+
+>Warning messages:
+>1: In fit_wham(em_input, do.retro = do.retro, do.osa = do.osa,  ... : 
+>** Error during model fit. **
+>Check for unidentifiable parameters.
+>
+>system is computationally singular: reciprocal condition number = 1.9425e-20
+>
+>2: In project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) :
+>  Difference between projection model nll and base model nll is 1.24568918942396
+>3: In fit_wham(em_input, do.retro = do.retro, do.osa = do.osa,  ... : 
+>** Error during model fit. **
+>Check for unidentifiable parameters.
+>
+>system is computationally singular: reciprocal condition number = 6.1186e-20
+>
+>4: In project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) :
+>  Difference between projection model nll and base model nll is 0.534905132018594
+>5: In sqrt(diag(cov)) : NaNs produced
+>6: In sqrt(diag(object$cov.fixed)) : NaNs produced
+>7: In project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) :
+>  Difference between projection model nll and base model nll is -1.51824730055841
+>8: In sqrt(diag(cov)) : NaNs produced
+>9: In sqrt(diag(object$cov.fixed)) : NaNs produced
+>10: In sqrt(diag(object$cov.fixed)) : NaNs produced
+>11: In sqrt(as.numeric(object$diag.cov.random)) : NaNs produced
+>12: In sqrt(diag(object$cov.fixed)) : NaNs produced
+>13: In sqrt(as.numeric(object$diag.cov.random)) : NaNs produced
+>14: In sqrt(diag(object$cov.fixed)) : NaNs produced
+>15: In sqrt(as.numeric(object$diag.cov.random)) : NaNs produced
+>16: In sqrt(diag(object$cov.fixed)) : NaNs produced
+>17: In sqrt(as.numeric(object$diag.cov.random)) : NaNs produced
+>18: In project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) :
+>  Difference between projection model nll and base model nll is -0.0448178645774533
+>19: In fit_wham(em_input, do.retro = do.retro, do.osa = do.osa,  ... : 
+>** Error during model fit. **
+>Check for unidentifiable parameters.
+>
+>system is computationally singular: reciprocal condition number = 1.57802e-16
+
