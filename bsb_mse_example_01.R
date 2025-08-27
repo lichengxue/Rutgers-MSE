@@ -2,6 +2,7 @@
 #
 #           Management Strategy Evaluation (MSE) Example for
 #                       Black Sea Bass (BSB)
+#                           BSB MSE - Mark I
 #
 #
 # Author(s): Chengxue Li [Original], Jeewantha Bandara [This version]
@@ -25,11 +26,8 @@
 # Run these lines only if you need to install or update the packages.
 # The file paths are examples and must be changed to your local directories.
 # -----------------------------------------------------------------------------
-# devtools::install_github("timjmiller/wham@lab", dependencies=FALSE)
-# devtools::document("C:/Users/chengxue.li/whamMSE")
-# devtools::load_all("C:/Users/chengxue.li/whamMSE")
-# devtools::install("C:/Users/chengxue.li/whamMSE")
-
+# devtools::install_github("timjmiller/wham", dependencies=FALSE)
+# devtools::install_github("lichengxue/whamMSE", dependencies=TRUE)
 
 # Load required libraries
 # -----------------------------------------------------------------------------
@@ -54,7 +52,7 @@ library(whamMSE)
 years <- 1989:2023
 
 # Define the MSE feedback (projection) period in years
-MSE_years <- 30
+MSE_years <- 20
 
 # Define the number of seasons and the fraction of the year in each 'season'
 n_seasons <- 11
@@ -316,7 +314,7 @@ if (TRUE) {
   # Specify the Harvest Control Rule (HCR)
   hcr <- list()
   hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
-  hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% SPR
+  hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
   
   # Execute the MSE loop for one realization
   mod <- loop_through_fn(
@@ -356,10 +354,10 @@ if (TRUE) {
 # the loop in Section 6.
 # It is wrapped in `if (FALSE)` to prevent errors.
 #
-if (FALSE) {
+if (TRUE) {
   
   plot_mse_output(
-    mods, # This would be a list of results, e.g., mods <- list(mod1, mod2)
+    mods<-list(mod), # This would be a list of results, e.g., mods <- list(mod1, mod2)
     main_dir = getwd(),
     output_dir = "Report",
     output_format = "pdf", # or "html" or "png"
@@ -368,8 +366,8 @@ if (FALSE) {
     method = "mean",
     outlier.opt = NA,
     f.ymax = 2, # control y-axis scale
-    new_model_names = c('PAN', 'FAA', 'SpD', 'SpE-F', "SpE-E"),
-    base.model = 'PAN',
+    new_model_names = c("FXSPR75"),
+    base.model = 'FXSPR75',
     start.years = 31,
     use.n.years.first = 3,
     use.n.years.last = 3
