@@ -1,7 +1,8 @@
 # MSE notebook
 
 *For taking any and all notes regarding MSE for BSB. Posts arranged from latest to oldest*
-** Notes by and (mostly for the benefit) of RMWJ Bandara
+
+- Notes by and (mostly for the benefit) of RMWJ Bandara
 
 ## `bsb_mse_example_01.R`
 
@@ -64,4 +65,42 @@ to a number of warnings shown below.
 >Check for unidentifiable parameters.
 >
 >system is computationally singular: reciprocal condition number = 1.57802e-16
+
+## 08/27/2025 log
+
+Created `bsb_mse_example_02.R` - This is for trying out a different harvest control rule on the stock
+
+New HCR is a hockey stick that fishes at a maximum of 80% SPR and goes down to 0.01%
+
+### Meeting with Cheng
+
+- MSE is showing warnings and errors once it's run for 20 years
+- How to save all warnings and errors from a run to a textfile?
+- Why isn't the MSE working beyond 3 years at the end?
+
+Potential fixes for non-convergence issues
+
+- Changing the years-at-age for Year 1 in the estimation model to _equilibrium_
+  - ```r
+      NAA_re$N1_model[] = "equilibrium"
+    ```
+- Increasing `sigma_vals` for the operating model to 0.75 to reflect the real stock assessment
+- Increase `prior_sigma` of the estimation model's movement 
+- Change whether we want to estimate movement with the MSE function (`loop_through_fn`)
+- Change the operating model's population dynamics model from a state-space model with random effects to 
+just a state-space model. This needs to be reflected in the estimation model as well. 
+    - ```r
+    sigma <- "rec"
+    re_cor <- "iid"
+    ini.opt <- "age-specific-fe"
+    sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
+    sigma_vals[, , 1] <- 0.75 # Recruitment sigma
+    # For the estimation model
+    NAA_re$sigma = "rec"
+````
+
+## 08/28/2025 log
+
+Adding functionality for plotting estimated SSB vs. true SSB for MSE (Can be found in 
+`bsb_mse_example_01.R`)
 
