@@ -1,6 +1,6 @@
 # MSE notebook
 
-*For taking any and all notes regarding MSE for BSB. Posts arranged from latest to oldest*
+*For taking any and all notes regarding MSE for BSB. Posts arranged from oldest to latest*
 
 - Notes by and (mostly for the benefit) of RMWJ Bandara
 
@@ -97,10 +97,18 @@ just a state-space model. This needs to be reflected in the estimation model as 
     sigma_vals[, , 1] <- 0.75 # Recruitment sigma
     # For the estimation model
     NAA_re$sigma = "rec"
-````
+      ```
 
 ## 08/28/2025 log
 
-Adding functionality for plotting estimated SSB vs. true SSB for MSE (Can be found in 
+Added functionality for plotting estimated SSB vs. true SSB for MSE (Can be found in 
 `bsb_mse_example_01.R`)
+
+Still to be done
+
+1. Make a file and analysis output pipeline that doesn't overwrite the "Report" folder
+2. Run multiple estimation models
+3. Run multiple HCRs
+4. Figure out what other important plots are
+
 
