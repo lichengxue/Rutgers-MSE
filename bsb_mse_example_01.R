@@ -52,9 +52,11 @@ library(whamMSE)
 years <- 1989:2023
 
 # Define the MSE feedback (projection) period in years
-MSE_years <- 20
+MSE_years <- 10
 
 # Define the number of seasons and the fraction of the year in each 'season'
+# The larger the number of seasons, the greater the chance of likelihood errors
+# Another potential fix is lowering the number of seasons - But keep this for last
 n_seasons <- 11
 fracyr_seasons <- c(rep(1, 5), 2, rep(1, 5)) / 12
 
@@ -199,7 +201,7 @@ move$mean_model <- matrix("stock_constant", 2, 1)
 sigma <- "rec+1" # Full state-space model where all numbers at age are random effects
 re_cor <- "iid" # iid - Independent and identically distributed covariate
 ini.opt <- "age-specific-fe" # Need to figure out what this means....
-sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
+sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma - Another potential fix is increasing this value
 sigma_vals[, , 1] <- 0.75 # Recruitment sigma
 
 NAA_re <- list(
@@ -309,12 +311,16 @@ if (TRUE) {
   move_em <- move
   move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
   move_em$use_prior[1, 1, , ] <- 1
+  # Another potential fix - Increase the value here to increase the confidence of the movement rate
   move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
   
   # Specify the Harvest Control Rule (HCR)
   hcr <- list()
   hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
   hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
+  
+  # Potential fix to the non-convergence. This seemed to fix the non-convergence issues
+  NAA_re$N1_model[] = "equilibrium"
   
   # Execute the MSE loop for one realization
   mod <- loop_through_fn(
@@ -329,7 +335,7 @@ if (TRUE) {
       separate.em = FALSE,
       separate.em.type = 3,
       do.move = TRUE,
-      est.move = TRUE
+      est.move = TRUE # Another potential fix to the non-convergence issues is to set this to FALSE
     ),
     assess_years = assess.years,
     assess_interval = assess.interval,
@@ -338,7 +344,7 @@ if (TRUE) {
     add.years = TRUE,
     seed = 123,
     hcr = hcr,
-    save.last.em = FALSE
+    save.last.em = TRUE
   )
 }
 
@@ -354,6 +360,11 @@ if (TRUE) {
 # the loop in Section 6.
 # It is wrapped in `if (FALSE)` to prevent errors.
 #
+
+# plot_wham_output(mod$em_full[[1]], out.type = "html")
+
+
+
 if (TRUE) {
   
   plot_mse_output(
@@ -374,3 +385,45 @@ if (TRUE) {
   )
   
 }
+
+# Custom plots for comparing estimation model vs. operating model
+
+# OM SSB vs. EM SSB
+
+# No. of MSE years
+assess.years.length <- length(assess.years)
+
+# All SSB estimates from the EM from the final MSE
+em_ssb <- mod$em_list[[assess.years.length]]$SSB[,]
+
+om_ssb <- mod$om$rep$SSB
+
+# Transform these matrices to a dataframe and plot them nicely alongside each other
+em_ssb_df <- as.data.frame(em_ssb)
+colnames(em_ssb_df) <- c("Stock 1","Stock 2")
+em_ssb_df <- em_ssb_df %>% mutate(year = append(years,tail(years)+MSE_years))
+em_ssb_df <- pivot_longer(em_ssb_df, cols=c("Stock 1","Stock 2"), names_to=c("Stock"), values_to=c("SSB") )
+# em_ssb_df <- em_ssb_df %>% mutate(Stock = replace(Stock, Stock=="V1","Stock 1"))
+# em_ssb_df <- em_ssb_df %>% mutate(Stock = replace(Stock, Stock=="V2","Stock 2"))
+
+om_ssb
+om_ssb_df <- as.data.frame(om_ssb)
+colnames(om_ssb_df) <- c("Stock 1", "Stock 2")
+om_ssb_df$year <- seq.int(nrow(om_ssb_df)) + (years[1]-1)
+om_ssb_df <- pivot_longer(om_ssb_df, cols=c("Stock 1", "Stock 2"), names_to=c("Stock"), values_to=c("SSB"))
+om_ssb_df <- om_ssb_df %>% relocate(year)
+
+# Join the two dataframes together
+em_ssb_df <- em_ssb_df %>% mutate(model="Estimation Model")
+om_ssb_df <- om_ssb_df %>% mutate(model="Operating Model")
+
+# Bind the two together
+m_ssb_df <- rbind(em_ssb_df, om_ssb_df)
+
+# Make a plot of em vs. om SSB
+ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line() + 
+  facet_wrap(~Stock, nrow=2) + 
+  geom_vline(xintercept=c(assess.years), color="black", linetype="dotted", linewidth=0.5) + 
+  labs(x="Year", y="SSB", color="Model") + 
+  scale_x_continuous(breaks=seq(1990,2035,3)) + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1))
