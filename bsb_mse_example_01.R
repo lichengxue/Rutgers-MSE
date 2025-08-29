@@ -33,8 +33,10 @@
 # -----------------------------------------------------------------------------
 library(wham)
 library(whamMSE)
+library(tidyverse)
+library(here)
 
-
+here::here()
 # Set working directory
 # IMPORTANT: Set this to your project's working directory where the data
 # files (e.g., "WAA.RDS") are located.
@@ -421,9 +423,11 @@ om_ssb_df <- om_ssb_df %>% mutate(model="Operating Model")
 m_ssb_df <- rbind(em_ssb_df, om_ssb_df)
 
 # Make a plot of em vs. om SSB
-ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line() + 
+em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line() + 
   facet_wrap(~Stock, nrow=2) + 
   geom_vline(xintercept=c(assess.years), color="black", linetype="dotted", linewidth=0.5) + 
   labs(x="Year", y="SSB", color="Model") + 
   scale_x_continuous(breaks=seq(1990,2035,3)) + 
   theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1))
+
+ggsave(here("plots","em_vs_om_plot.png"), em_vs_om_plot, height=6, width=10, units=c("in"), dpi=300)
