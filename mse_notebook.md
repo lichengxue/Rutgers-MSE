@@ -111,4 +111,17 @@ Still to be done
 3. Run multiple HCRs
 4. Figure out what other important plots are
 
+## 09/03/2025 log
 
+Improved the functionality for plotting estimated SSB vs. true SSB for MSE (Can be
+found in `bsb_mse_example_01.R`)
+
+Things to be done next
+
+1. Make a file and analysis output pipeline that doesn't overwrite the "Report" folder
+2. Make a version of the model where the estimation model is configured exactly the same as the OM
+3. Make a version of the operating model with basically no errors so that we can check it's behavior
+
+> Why is this important? 
+> Because it will teach me what each error introduced to the system will do. This will give me 
+a better understanding of the OM.
