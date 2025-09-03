@@ -6,7 +6,7 @@
 #
 #
 # Author(s): Chengxue Li [Original], Jeewantha Bandara [This version]
-# Date: 2025/08/06
+# Last change: 2025/08/29
 # Runtime environment: MacOS Sequoia 15.5 on M-chip Macbook Pro, R version 4.4.1
 #
 #
@@ -204,7 +204,7 @@ sigma <- "rec+1" # Full state-space model where all numbers at age are random ef
 re_cor <- "iid" # iid - Independent and identically distributed covariate
 ini.opt <- "age-specific-fe" # Need to figure out what this means....
 sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma - Another potential fix is increasing this value
-sigma_vals[, , 1] <- 0.75 # Recruitment sigma
+sigma_vals[, , 1] <- 0.75 # Recruitment sigma/error
 
 NAA_re <- list(
   N1_model = rep(ini.opt, n_stocks),
@@ -423,11 +423,19 @@ om_ssb_df <- om_ssb_df %>% mutate(model="Operating Model")
 m_ssb_df <- rbind(em_ssb_df, om_ssb_df)
 
 # Make a plot of em vs. om SSB
-em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line() + 
-  facet_wrap(~Stock, nrow=2) + 
-  geom_vline(xintercept=c(assess.years), color="black", linetype="dotted", linewidth=0.5) + 
+em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line(linewidth=1.5, alpha=0.75) + 
+  facet_wrap(~Stock, nrow=2, scales="free") + 
+  geom_vline(xintercept=c(assess.years), color="black", linetype="dotted", linewidth=0.5, alpha=0.5) + 
   labs(x="Year", y="SSB", color="Model") + 
   scale_x_continuous(breaks=seq(1990,2035,3)) + 
-  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1))
+  scale_y_continuous(limits=c(0,35000)) + 
+  theme_classic() + 
+  theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1),
+        strip.background = element_blank(),
+        axis.line = element_line())
 
+em_vs_om_plot
+  
 ggsave(here("plots","em_vs_om_plot.png"), em_vs_om_plot, height=6, width=10, units=c("in"), dpi=300)
+
+
