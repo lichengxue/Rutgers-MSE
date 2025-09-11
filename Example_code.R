@@ -297,7 +297,7 @@ print(assess.years)
 # long time to run. It is wrapped in `if (FALSE)` to prevent accidental execution.
 # Change to `if (TRUE)` to run the simulation.
 #
-if (FALSE) {
+if (TRUE) {
   
   # Generate a single realization of the OM (with one set of random effects)
   om_with_data <- update_om_fn(om, seed = 123, random = random)
