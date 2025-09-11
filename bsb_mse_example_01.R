@@ -425,15 +425,17 @@ m_ssb_df <- rbind(em_ssb_df, om_ssb_df)
 # Make a plot of em vs. om SSB
 em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line(linewidth=1.5, alpha=0.75) + 
   facet_wrap(~Stock, nrow=2, scales="free") + 
-  geom_vline(xintercept=c(assess.years), color="black", linetype="dotted", linewidth=0.5, alpha=0.5) + 
+  geom_vline(xintercept=c(assess.years), linetype="dotted", linewidth=0.5, alpha=0.5) + 
   labs(x="Year", y="SSB", color="Model") + 
   scale_x_continuous(breaks=seq(1990,2035,3)) + 
   scale_y_continuous(limits=c(0,35000)) + 
+  scale_linetype_manual(values=c("dotted"), name="Assessment year") + 
   theme_classic() + 
   theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1),
         strip.background = element_blank(),
         axis.line = element_line())
 
+# Tried to make a legend entry for assessment years. But not currently working
 em_vs_om_plot
   
 ggsave(here("plots","em_vs_om_plot.png"), em_vs_om_plot, height=6, width=10, units=c("in"), dpi=300)
