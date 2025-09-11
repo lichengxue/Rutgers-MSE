@@ -1,16 +1,4 @@
-# MSE notebook
-
-*For taking any and all notes regarding MSE for BSB. Posts arranged from oldest to latest*
-
-- Notes by and (mostly for the benefit) of RMWJ Bandara
-
-## `bsb_mse_example_01.R`
-
-This is a brief explanation of the example MSE used for black sea bass.
-The model sets up a 3 year long MSE with assessments every 3 years. This is 
-preceded by 35 years of historical data (1989 to 2023) after which the MSE 
-takes over. The population is structured as two meta-stocks that have movement 
-between each other. 
+# MSE development logs
 
 ## 08/22/2025 log
 
@@ -125,3 +113,12 @@ Things to be done next
 > Why is this important? 
 > Because it will teach me what each error introduced to the system will do. This will give me 
 a better understanding of the OM.
+
+## 09/11/2025 log
+
+- Making improvements to `bsb_mse_example_01.R` to store run time information as well as generate
+separate folders for Reports.
+- Made a script named `bsb_mse_example_03.R` that will be specifying the estimation model the same as 
+the operating model
+- Making the following changes to the estimation model and looking at different outcomes
+  - `move_em$prior_sigma` set to 1 (from 0.2) - Not greater difference other than 
