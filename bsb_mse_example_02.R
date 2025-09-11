@@ -389,16 +389,16 @@ if (TRUE) {
 if (TRUE) {
   
   plot_mse_output(
-    mods<-list(mod), # This would be a list of results, e.g., mods <- list(mod1, mod2)
+    mods<-mods, # This would be a list of results, e.g., mods <- list(mod1, mod2)
     main_dir = getwd(),
-    output_dir = "Report",
+    output_dir = "Report-2025-08-27",
     output_format = "pdf", # or "html" or "png"
     width = 10, height = 7, dpi = 300,
     col.opt = "D",
     method = "mean",
     outlier.opt = NA,
     f.ymax = 2, # control y-axis scale
-    new_model_names = c("FXSPR75"),
+    new_model_names = c("FXSPR75","Hockey"),
     base.model = 'FXSPR75',
     start.years = 31,
     use.n.years.first = 3,
