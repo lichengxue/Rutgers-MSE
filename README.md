@@ -2,7 +2,8 @@
 
 *Investigating the impacts of climate change on fisheries management using Management Strategy Evaluation (MSE).*
 
-A research collaboration between NOAA and Rutgers University.
+A research collaboration between NOAA and Rutgers University.<br>
+Weekly meeting notes are [here](https://docs.google.com/document/d/1BHsyZGrqreoGuL_ZUmaDFgmgx5nOAsYNkjJhyGcE4l0/edit?usp=sharing)
 
 This project uses the [whamMSE](https://lichengxue.github.io/whamMSE/) toolbox, which is built upon the [Woods Hole Assessment Model (WHAM)](https://timjmiller.github.io/wham/).
 
