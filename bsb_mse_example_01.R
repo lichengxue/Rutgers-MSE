@@ -36,6 +36,10 @@ library(whamMSE)
 library(tidyverse)
 library(here)
 
+
+# Benchmarking run time and info for save files
+run_start_time <- Sys.time()
+
 here::here()
 # Set working directory
 # IMPORTANT: Set this to your project's working directory where the data
@@ -119,13 +123,14 @@ user_maa <- rbind(
 
 
 # 3c. Fleet and Survey Information ----
-# Define which fleets/surveys operate in which regions and specify their
+# Define which fleets/surveys operate  in which regions and specify their
 # associated observation error models.
 # 
 # Fleet Information
 fleet_regions <- c(1, 1, 2, 2) # Commercial, Recreational, Commercial, Recreational
 catch_Neff <- c(50, 50, 50, 50) # Effective sample size for age comps
 catch_cv <- c(0.05, 0.15, 0.05, 0.15) # CV for total catch
+# CV is coefficient of variation (SD/mean)
 
 # Survey Information
 index_regions <- c(1, 2)
@@ -156,7 +161,8 @@ info <- generate_basic_info(
   n_ages = n_ages,
   n_seasons = n_seasons,
   catch_info = list(catch_cv = catch_cv, catch_Neff = catch_Neff),
-  index_info = list(index_cv = index_cv, index_Neff = index_Neff, q = q, fracyr_indices = fracyr_indices),
+  index_info = list(index_cv = index_cv, index_Neff = index_Neff,
+                    q = q, fracyr_indices = fracyr_indices),
   fracyr_seasons = fracyr_seasons,
   fracyr_spawn = 0.5,
   user_waa = user_waa,
@@ -218,7 +224,8 @@ NAA_re <- list(
 
 # 4e. Configure Natural Mortality (M) ----
 # Assume a time-invariant, age-constant natural mortality (M).
-M <- list(model = "constant", initial_means = array(0.4, dim = c(n_stocks, n_regions, n_ages)))
+M <- list(model = "constant", initial_means = array(0.4, dim = c(n_stocks,
+                                                                 n_regions, n_ages)))
 
 
 # 4f. Configure Gear Selectivity ----
@@ -267,8 +274,10 @@ input <- update_waa(input, waa_info = waa_info)
 
 # Set initial numbers-at-age for the first year of the historical period.
 ini.NAA <- matrix(NA, n_ages, n_stocks)
-ini.NAA[, 1] <- c(4531.15069, 2876.48828, 1484.19315, 692.67290, 314.73335, 142.50149, 64.41915, 52.58156)
-ini.NAA[, 2] <- c(16023.94518, 10167.14058, 5683.71704, 2523.02265, 972.93721, 353.59712, 125.80803, 68.66246)
+ini.NAA[, 1] <- c(4531.15069, 2876.48828, 1484.19315, 692.67290, 314.73335,
+                  142.50149, 64.41915, 52.58156)
+ini.NAA[, 2] <- c(16023.94518, 10167.14058, 5683.71704, 2523.02265, 972.93721
+                  , 353.59712, 125.80803, 68.66246)
 input$par$log_N1[] <- 0
 for (i in 1:n_regions) {
   input$par$log_N1[i, i, ] <- log(ini.NAA[, i])
@@ -292,7 +301,8 @@ om <- fit_wham(input, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
 assess.interval <- 3 # Assessments occur every 3 years
 base.years <- years
 terminal.year <- tail(base.years, 1)
-assess.years <- seq(terminal.year, tail(om$years, 1) - assess.interval, by = assess.interval)
+assess.years <- seq(terminal.year, tail(om$years, 1) - assess.interval,
+                    by = assess.interval)
 
 # Print the designated assessment years to verify
 print(assess.years)
@@ -311,10 +321,12 @@ if (TRUE) {
   
   # Configure the Estimation Model (EM) for use within the loop
   move_em <- move
-  move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+  move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions,
+                                        n_regions - 1))
   move_em$use_prior[1, 1, , ] <- 1
   # Another potential fix - Increase the value here to increase the confidence of the movement rate
-  move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+  move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions,
+                                            n_regions - 1))
   
   # Specify the Harvest Control Rule (HCR)
   hcr <- list()
@@ -353,41 +365,8 @@ if (TRUE) {
 
 # --- 7. VISUALIZE MSE RESULTS ----
 
-# After the MSE is complete, this section shows how to use the built-in
-# plotting functions to summarize and visualize the results.
-# -----------------------------------------------------------------------------
 
-# The code below is an example of how to call the plotting function. It will not
-# run without a 'mods' object, which would be a list of completed MSE runs from
-# the loop in Section 6.
-# It is wrapped in `if (FALSE)` to prevent errors.
-#
-
-# plot_wham_output(mod$em_full[[1]], out.type = "html")
-
-
-
-if (TRUE) {
-  
-  plot_mse_output(
-    mods<-list(mod), # This would be a list of results, e.g., mods <- list(mod1, mod2)
-    main_dir = getwd(),
-    output_dir = "Report",
-    output_format = "pdf", # or "html" or "png"
-    width = 10, height = 7, dpi = 300,
-    col.opt = "D",
-    method = "mean",
-    outlier.opt = NA,
-    f.ymax = 2, # control y-axis scale
-    new_model_names = c("FXSPR75"),
-    base.model = 'FXSPR75',
-    start.years = 31,
-    use.n.years.first = 3,
-    use.n.years.last = 3
-  )
-  
-}
-
+#### Custom plots between operating model and assessment/estimation model
 # Custom plots for comparing estimation model vs. operating model
 
 # OM SSB vs. EM SSB
@@ -404,7 +383,8 @@ om_ssb <- mod$om$rep$SSB
 em_ssb_df <- as.data.frame(em_ssb)
 colnames(em_ssb_df) <- c("Stock 1","Stock 2")
 em_ssb_df <- em_ssb_df %>% mutate(year = append(years,tail(years)+MSE_years))
-em_ssb_df <- pivot_longer(em_ssb_df, cols=c("Stock 1","Stock 2"), names_to=c("Stock"), values_to=c("SSB") )
+em_ssb_df <- pivot_longer(em_ssb_df, cols=c("Stock 1","Stock 2"), 
+                          names_to=c("Stock"), values_to=c("SSB") )
 # em_ssb_df <- em_ssb_df %>% mutate(Stock = replace(Stock, Stock=="V1","Stock 1"))
 # em_ssb_df <- em_ssb_df %>% mutate(Stock = replace(Stock, Stock=="V2","Stock 2"))
 
@@ -412,7 +392,8 @@ om_ssb
 om_ssb_df <- as.data.frame(om_ssb)
 colnames(om_ssb_df) <- c("Stock 1", "Stock 2")
 om_ssb_df$year <- seq.int(nrow(om_ssb_df)) + (years[1]-1)
-om_ssb_df <- pivot_longer(om_ssb_df, cols=c("Stock 1", "Stock 2"), names_to=c("Stock"), values_to=c("SSB"))
+om_ssb_df <- pivot_longer(om_ssb_df, cols=c("Stock 1", "Stock 2"),
+                          names_to=c("Stock"), values_to=c("SSB"))
 om_ssb_df <- om_ssb_df %>% relocate(year)
 
 # Join the two dataframes together
@@ -423,9 +404,11 @@ om_ssb_df <- om_ssb_df %>% mutate(model="Operating Model")
 m_ssb_df <- rbind(em_ssb_df, om_ssb_df)
 
 # Make a plot of em vs. om SSB
-em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line(linewidth=1.5, alpha=0.75) + 
+em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + 
+  geom_line(linewidth=1.5, alpha=0.75) + 
   facet_wrap(~Stock, nrow=2, scales="free") + 
-  geom_vline(xintercept=c(assess.years), linetype="dotted", linewidth=0.5, alpha=0.5) + 
+  geom_vline(xintercept=c(assess.years), linetype="dotted", linewidth=0.5,
+             alpha=0.5) + 
   labs(x="Year", y="SSB", color="Model") + 
   scale_x_continuous(breaks=seq(1990,2035,3)) + 
   scale_y_continuous(limits=c(0,35000)) + 
@@ -435,9 +418,52 @@ em_vs_om_plot <- ggplot(m_ssb_df, aes(year, SSB, color=model)) + geom_line(linew
         strip.background = element_blank(),
         axis.line = element_line())
 
+
 # Tried to make a legend entry for assessment years. But not currently working
 em_vs_om_plot
+
+# After the MSE is complete, this section shows how to use the built-in
+# plotting functions to summarize and visualize the results.
+# -----------------------------------------------------------------------------
+
+# The code below is an example of how to call the plotting function. It will not
+# run without a 'mods' object, which would be a list of completed MSE runs from
+# the loop in Section 6.
+# It is wrapped in `if (FALSE)` to prevent errors.
+
+# plot_wham_output(mod$em_full[[1]], out.type = "html")
+
+SAVE_DATA <- TRUE
+
+# From now on, all reports and plots will be saved into a folder that's specific
+# for each run.
+
+if (SAVE_DATA) {
   
-ggsave(here("plots","em_vs_om_plot.png"), em_vs_om_plot, height=6, width=10, units=c("in"), dpi=300)
-
-
+  folder_name <- format(run_start_time, "%Y-%m-%d_%H-%M-%S")
+  folder_path <- here("Reports",folder_name,"custom_plots")
+  # Create a folder. Suppress warnings and allow recursive folders to be created
+  dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
+  
+  plot_mse_output(
+    mods<-list(mod), # This would be a list of results, e.g., mods <- list(mod1, mod2)
+    main_dir = here(),
+    output_dir = here("Reports",folder_name),
+    output_format = "pdf", # or "html" or "png"
+    width = 10, height = 7, dpi = 300,
+    col.opt = "D",
+    method = "mean",
+    outlier.opt = NA,
+    f.ymax = 2, # control y-axis scale
+    new_model_names = c("FXSPR75"),
+    base.model = 'FXSPR75',
+    start.years = 31,
+    use.n.years.first = 3,
+    use.n.years.last = 3
+  )
+  
+  # Save custom plots
+  ggsave(here("plots","em_vs_om_plot.png"), em_vs_om_plot, height=6, width=10, 
+         units=c("in"), dpi=300)
+  
+}
