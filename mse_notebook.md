@@ -2,6 +2,10 @@
 
 - Notes by and (mostly for the benefit) of RMWJ Bandara
 
+Background readings to fully understand WHAM (Woods Hall Assessment Model) and 
+it's derivatives.
+
+
 ## `bsb_mse_example_01.R`
 
 This is a brief explanation of the example MSE used for black sea bass.
@@ -16,7 +20,8 @@ sections of the code.
 
 ### Spatial considerations
 
-It's important to remember that *stock* and *region* have different meanings in 
+It's important to remember that *stock* and *region* have different meanings in the model.
+The `stock` refers to the biological unit and it's individuals. 
 
 ### Time
 
@@ -112,9 +117,44 @@ NAA_re <- list(
 )
 ```
 
+### Natural mortality
 
+Natural mortality ($M$) for black sea bass is set as a time-invariant, 
+age constant value (0.4).
+
+### Gear selectivity
+
+Gear selectivity is defined for all four different fleets (commercial and recreational) 
+and for the two trawl surveys.
+
+### Building the Operating Model (OM) object
+
+Then all the above information is gathered into a single list for wham_input (function is `prepare_wham_input`). 
+Then this input list is edited because it has some nice defaults which makes it 
+possible to make minor changes to get the model that you want.  
+Weights at age for this input list is updated using `waa_info`. 
+Then initial numbers at age ($NAA_{a,s}$) are set using numbers from the stock assessment.
+
+Then the operating model (OM) is generated using function 
+[`fit_wham`](https://timjmiller.github.io/wham/reference/fit_wham.html) without 
+actually fitting it to data using the following options.
+
+- `do.fit` - Fit the model using TMB
+- `do.brps` - Calculate biological reference points
+- `MakeADFun.silent` - If to fit log likelihoods in TMB to the fitted model.
+
+We are just generating an operating model with the data and doing no fitting.
+
+```r
+om <- fit_wham(input, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
+```
+
+### Setting up the MSE and the estimation model
+
+We set up the MSE to run every 3 years starting from the year where the historical 
+data ends. 
 
 Reference for specifying numbers at age in wham is 
 [here](https://timjmiller.github.io/wham/reference/set_NAA.html)
 
-## `bsb_mse_example_03.R`
+
