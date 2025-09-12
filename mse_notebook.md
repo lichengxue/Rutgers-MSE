@@ -49,11 +49,72 @@ This defines whether there is mandatory movement of individuals belonging to a
 certain stock from one region to the other. 
 - `move$can_move` - An array of dimensions  `n_stocks` x `n_seasons` x `n_regions` x `n_regions`. 
 This defines whether there can be movement of individuals belong to a stock from 
-one region to another and vice versa. 
+one region to another. 
 
-> All individuals belonging to stock 1 who are in region 2, should move
+Only individuals belonging to stock 1 can move between regions.
+All individuals belonging to stock 1 who are in region 2, should move
 back to region 1 in season 5 (May).
-> We also allow for movement 
+We also allow for movement of stock 1 individuals from region 2 to region 1 
+from January to April. We allow for movement of stock 1 individuals from 
+region 1 to region 2 from August to December. We allow the movement of all 
+individuals belonging to stock 1 in region 2 to move to region 1.
+Then we set  movement model for each stock (`mean_vals`). Then we set the 
+movement model (*stock_constant*). Reference for the movement models can be found 
+[here](https://timjmiller.github.io/wham/reference/set_move.html).
+
+> "stock_constant" - estimate a movement rate for each stock to each region shared across all 
+seasons, ages, years
+
+```r
+move <- list(stock_move = c(TRUE, FALSE), separable = TRUE)
+move$must_move <- array(0, dim = c(2, 11, 2))
+move$must_move[1, 5, 2] <- 1
+move$can_move <- array(0, dim = c(2, 11, 2, 2))
+move$can_move[1, 1:4, 2, 1] <- 1
+move$can_move[1, 7:11, 1, 2] <- 1
+move$can_move[1, 5, 2, ] <- 1
+mean_vals <- array(0, dim = c(2, length(fracyr_seasons), 2, 1))
+mean_vals[1, 1:11, 1, 1] <- 0.02214863
+mean_vals[1, 1:11, 2, 1] <- 0.3130358
+move$mean_vals <- mean_vals
+move$mean_model <- matrix("stock_constant", 2, 1)
+```
+
+## Numbers at age dynamics
+
+Recruitment is random around a mean (`recruit_model = 2`). `sigma`($\sigma$) determines 
+the type of error associated with recruitment and how numbers at age relate to
+the previous age. The options are either "rec" or "rec+1" where "rec+1" estimates 
+two sigmas ($\sigma_a, \sigma$). One for recruitment and one shared among other 
+ages. <br>
+Correlation between age classes is determined by `re_cor`. We have set it to "iid", 
+where numbers at age are uncorrelated with each other (The errors are drawn from 
+Independent and Identical distribution). <br>
+Initial numbers at age ($NAA_1$) is determined by `ini.opt`. We have set it to 
+"age_specific_fe" which is age-and-region specific fixed effects parameters.
+The initial standard deviation values for NAA is defined by `sigma_vals`. 
+Mean recruitment ($\mu$) for each stock is determined by `recruit_pars`.
+
+```r
+sigma <- "rec+1" # Full state-space model where all numbers at age are random effects
+re_cor <- "iid" # iid - Independent and identically distributed covariate
+ini.opt <- "age-specific-fe" # Need to figure out what this means....
+sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma - Another potential fix is increasing this value
+sigma_vals[, , 1] <- 0.75 # Recruitment sigma/error
+
+NAA_re <- list(
+  N1_model = rep(ini.opt, n_stocks),
+  sigma = rep(sigma, n_stocks),
+  cor = rep(re_cor, n_stocks),
+  recruit_model = 2, # 2 = density-independent. Random about mean
+  recruit_pars = list(16000, 21000), # Mean recruitment for each stock
+  sigma_vals = sigma_vals
+)
+```
+
+
+
+Reference for specifying numbers at age in wham is 
+[here](https://timjmiller.github.io/wham/reference/set_NAA.html)
 
 ## `bsb_mse_example_03.R`
-
