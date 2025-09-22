@@ -48,7 +48,8 @@ basic_info$NAA_where[2, 1, ] <- 0  # Stock 2 does not move into region 1
 Movement parameters are defined using the `move` list object. It has the following 
 items.
 - `move$stock_move` - Says whether the individuals can move to and from that subunit
-- `move$separable` - Says whether the subunits are separate from one another
+- `move$separable` - If `separable` is equal to TRUE, fish will only move at the 
+end of the time box.
 - `move$must_move` - An array of dimensions `n_stocks` x `n_seasons` x `n_regions`. 
 This defines whether there is mandatory movement of individuals belonging to a 
 certain stock from one region to the other. 
@@ -157,4 +158,81 @@ data ends.
 Reference for specifying numbers at age in wham is 
 [here](https://timjmiller.github.io/wham/reference/set_NAA.html)
 
+### Specify MSE timeline and HCR
+
+A single realization of the OM is generated with `update_om_fn()`. 
+
+#### Specify Harvest Control Rule
+
+HCRs are specified as a list. WhamMSE supports three types of HCRs. These include 
+
+1. Fixed Percentage of SPR - `hcr.type <- 1`
+2. Constant catch - `hcr.type <- 2`
+3. Hockey stick / Sliding - `hcr.type <- 3`
+
+Each of these must be accompanied by `hcr.opts`.
+
+```r
+  hcr <- list()
+  hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
+  hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
+```
+
+
+
+### Run the MSE loop
+
+MSE loop is run through `loop_through_fn`. 
+
+```r
+  mod <- loop_through_fn(
+    om = om_with_data,
+    em_info = info,
+    random = random,
+    sel_em = sel,
+    M_em = M,
+    NAA_re_em = NAA_re,
+    move_em = move_em,
+    em.opt = list(
+      separate.em = FALSE,
+      separate.em.type = 3,
+      do.move = TRUE,
+      est.move = TRUE
+    ),
+    assess_years = assess.years,
+    assess_interval = assess.interval,
+    base_years = base.years,
+    year.use = 35,
+    add.years = TRUE,
+    seed = 123,
+    hcr = hcr,
+    save.last.em = TRUE
+  )
+```
+
+Here both the om and em information must be provided along with information on which 
+years the assessment happens. 
+
+### Known issues
+
+The model can run into convergence issues. Potential fixes are shown below.
+
+- Changing the years-at-age for Year 1 in the estimation model to _equilibrium_
+  - ```r
+      NAA_re$N1_model[] = "equilibrium"
+    ```
+- Increasing `sigma_vals` for the operating model to 0.75 to reflect the real stock assessment
+- Increase `prior_sigma` of the estimation model's movement 
+- Change whether we want to estimate movement with the MSE function (`loop_through_fn`)
+- Change the operating model's population dynamics model from a state-space model with random effects to 
+just a state-space model. This needs to be reflected in the estimation model as well. 
+    - ```r
+    sigma <- "rec"
+    re_cor <- "iid"
+    ini.opt <- "age-specific-fe"
+    sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
+    sigma_vals[, , 1] <- 0.75 # Recruitment sigma
+    # For the estimation model
+    NAA_re$sigma = "rec"
+      ```
 
