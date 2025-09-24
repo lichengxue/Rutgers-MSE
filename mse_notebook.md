@@ -162,6 +162,34 @@ Reference for specifying numbers at age in wham is
 
 A single realization of the OM is generated with `update_om_fn()`. 
 
+A couple of things that I don't fully understand.
+
+1. *Movement in the estimation model* - The estimation movement model is set 
+using the same one we used for the operating model. However, I don't understand 
+`move_em$use_prior` does in the code.
+
+```r
+  move_em <- move
+  move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions,
+                                        n_regions - 1))
+  move_em$use_prior[1, 1, , ] <- 1
+  # Another potential fix - Increase the value here to increase the confidence of the movement rate
+  move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions,
+                                            n_regions - 1))
+```
+What we are doing 
+
+2. *Setting population dynamics for $NAA_{re}$ in Year 1* - I'm not sure why the following 
+piece of code is in the estimation portion of the MSE. I'm asking that because we are 
+changing the N1_model of the operating models to "equilibrium", simply meaning that we 
+are letting the model itself figure out an equilibrium point and allow for individuals to 
+move out of the spatial confines of the stock if that's necessary.
+> I'm still not sure I understand this correctly. Ask Cheng!
+
+```r
+  NAA_re$N1_model[] = "equilibrium"
+```
+
 #### Specify Harvest Control Rule
 
 HCRs are specified as a list. WhamMSE supports three types of HCRs. These include 
@@ -170,15 +198,14 @@ HCRs are specified as a list. WhamMSE supports three types of HCRs. These includ
 2. Constant catch - `hcr.type <- 2`
 3. Hockey stick / Sliding - `hcr.type <- 3`
 
-Each of these must be accompanied by `hcr.opts`.
+Each of these must be accompanied by `hcr.opts`. Different opts must be set depending 
+on the type of harvest control rule we will be using.
 
 ```r
   hcr <- list()
   hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
   hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
 ```
-
-
 
 ### Run the MSE loop
 
