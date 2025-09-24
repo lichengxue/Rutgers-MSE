@@ -122,3 +122,15 @@ separate folders for Reports.
 the operating model
 - Making the following changes to the estimation model and looking at different outcomes
   - `move_em$prior_sigma` set to 1 (from 0.2) - Not greater difference other than 
+  
+## 09/17/2025 log
+
+- Held weekly meeting and set goals and expectations on deliverable for the MSE
+
+## 09/19/2025 log
+
+- Completed the notes for `bsb_mse_example_01.R` @ `mse_notebook.md`
+
+## 09/24/2025 log
+
+- 
