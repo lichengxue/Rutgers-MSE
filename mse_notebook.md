@@ -227,12 +227,12 @@ The model can run into convergence issues. Potential fixes are shown below.
 - Change the operating model's population dynamics model from a state-space model with random effects to 
 just a state-space model. This needs to be reflected in the estimation model as well. 
     - ```r
-    sigma <- "rec"
-    re_cor <- "iid"
-    ini.opt <- "age-specific-fe"
-    sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
-    sigma_vals[, , 1] <- 0.75 # Recruitment sigma
-    # For the estimation model
-    NAA_re$sigma = "rec"
+      sigma <- "rec"
+      re_cor <- "iid"
+      ini.opt <- "age-specific-fe"
+      sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
+      sigma_vals[, , 1] <- 0.75 # Recruitment sigma
+      # For the estimation model
+      NAA_re$sigma = "rec"
       ```
 
