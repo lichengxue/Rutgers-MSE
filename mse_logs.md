@@ -131,6 +131,10 @@ the operating model
 
 - Completed the notes for `bsb_mse_example_01.R` @ `mse_notebook.md`
 
-## 09/24/2025 log
+## 10/06/2025 log
 
-- 
+- Uninstalling `whamMSE` and `wham`
+
+
+
+
