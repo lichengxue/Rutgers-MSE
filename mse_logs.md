@@ -135,6 +135,20 @@ the operating model
 
 - Uninstalling `whamMSE` and `wham`
 
+## 10/07/2025 log
+
+- Meeting with Cheng
+- Use this for plotting wham fits: `wham::plot_wham_output()`
 
 
+## 10/22/2025 log
+
+- Uninstalled and reinstalled `wham` and `whamMSE` packages
+  - Used the following commands
+    - `remove.packages("wham",whamMSE")`
+    - `remotes::install_github("timjmiller/wham@lab")`
+    - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+  - *IMPORTANT* - I skipped installing any of the suggested package updates 
+  - After this update, I can't run `bsb_mse_example_01.R` anymore
+    - Getting an error about how proj.wham doesn't have enough years
 
