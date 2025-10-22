@@ -225,15 +225,16 @@ fit_0$fn(fits[[1]]$opt$par)
 fit_0 <- do_retro_peels(fit_0, use.mle = FALSE)
 # pkgbuild::compile_dll("c:/work/wham/wham",debug = FALSE)
 # pkgload::load_all("c:/work/wham/wham")
-xx <- retro(fit_0, n.peels = 1, use.mle = FALSE, MakeADFun.silent = TRUE, check.version = FALSE, save.input = TRUE)
-x <- fit_peel(1, fit_0$input, n.newton = 0, MakeADFun.silent = TRUE, save.input = TRUE)
-xx.mle <- retro(fit_0, n.peels = 1, use.mle = TRUE, MakeADFun.silent = TRUE, check.version = FALSE, save.input = TRUE)
-
-temp <- fit_0$input
-temp$par <- fit_0$parList
-temp$map$logit_q <- factor(rep(NA, length(temp$par$logit_q)))
-temp$map$trans_NAA_rho <- factor(rep(NA, length(temp$par$logit_q)))
-x <- fit_peel(7, temp, n.newton = 0, MakeADFun.silent = FALSE, save.input = TRUE)
+# Commenting this section out on 10/22/2025 - Not useful
+# xx <- retro(fit_0, n.peels = 1, use.mle = FALSE, MakeADFun.silent = TRUE, check.version = FALSE, save.input = TRUE)
+# x <- fit_peel(1, fit_0$input, n.newton = 0, MakeADFun.silent = TRUE, save.input = TRUE)
+# xx.mle <- retro(fit_0, n.peels = 1, use.mle = TRUE, MakeADFun.silent = TRUE, check.version = FALSE, save.input = TRUE)
+# 
+# temp <- fit_0$input
+# temp$par <- fit_0$parList
+# temp$map$logit_q <- factor(rep(NA, length(temp$par$logit_q)))
+# temp$map$trans_NAA_rho <- factor(rep(NA, length(temp$par$logit_q)))
+# x <- fit_peel(7, temp, n.newton = 0, MakeADFun.silent = FALSE, save.input = TRUE)
 
 input_2 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, basic_info = basic_info, move = move, ecov = ecov_2, catch_info = catch_info,
                               index_info = index_info, age_comp = age_comp)
