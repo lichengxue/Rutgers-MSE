@@ -152,3 +152,25 @@ the operating model
   - After this update, I can't run `bsb_mse_example_01.R` anymore
     - Getting an error about how proj.wham doesn't have enough years
 
+> Error in project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) : 
+>  
+> ** Error setting up projections: **
+> proj.opts$avg.yrs is not a subset of model years.
+
+
+- Getting an error with bsb_mse_env_example_01.R
+
+> Retro Peel: 7
+> 
+> --Ecov--------------------------------------------------------------------------------------------------------------------------------
+> one or more ecov does not start by model year 1 - max(lag). Padding ecov... 
+> Please check that the environmental covariates have been loaded and interpreted correctly.
+> 
+>      Model years: 1989 to 2014
+>      Ecov years: 1988 to 2014
+>
+>    -------------------------------------------------------------------------------------------------------------------------------------
+> 
+> 
+> Error in TMB::MakeADFun(temp$data, temp$par, DLL = "wham", random = temp$random,  : 
+>   A map factor length must equal parameter length
