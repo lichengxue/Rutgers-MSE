@@ -1,8 +1,8 @@
 # -----------------------------------------------------------------------------
 #
 #           Management Strategy Evaluation (MSE) Example for
-#        Black Sea Bass (BSB) with multiple estimation methods
-#                              BSB MSE - Mark II
+#           Black Sea Bass (BSB) with Environmental Drivers
+#                   BSB MSE - Environmental Drivers
 #
 #
 # Author(s): Chengxue Li [Original], Jeewantha Bandara [This version]
@@ -38,8 +38,11 @@ basic_info$NAA_where[2,1,] = 0 #stock 2, any age can't be in region 1 (stock 2 d
 basic_info$XSPR_R_avg_yrs <- which(temp$years>1999)
 basic_info$XSPR_R_opt <- 2 #use average of recruitments (random effects), not expected/predicted given last time step
 #############################################
-north_bt <- read.csv(here("bsb_bt_temp_nmab_1959-2022.csv"))
-south_bt <- read.csv(here("bsb_bt_temp_smab_1959-2022.csv"))
+north_bt <- read.csv(here("data","bsb_bt_temp_nmab_1959-2022.csv"))
+south_bt <- read.csv(here("data","bsb_bt_temp_smab_1959-2022.csv"))
+# Cutting down to 1989 to 2014 for the temperature data
+north_bt <- north_bt %>% filter(year>=1989)
+south_bt <- south_bt %>% filter(year>=1989)
 ecov <- list(label = c("North_BT","South_BT"))
 ecov$mean <- cbind(north_bt[,'mean'], south_bt[,'mean'])
 ecov$mean <- t(t(ecov$mean) - apply(ecov$mean,2,mean))
@@ -258,12 +261,12 @@ input_6$par <- fit_0$parList
 fit_6 <- fit_wham(input_6, do.brps = FALSE, do.sdrep = TRUE, do.osa = FALSE, do.retro = TRUE)
 
 # Save individually
-saveRDS(fit_1, file = "fit_1.rds")
-saveRDS(fit_2, file = "fit_2.rds")
-saveRDS(fit_3, file = "fit_3.rds")
-saveRDS(fit_4, file = "fit_4.rds")
-saveRDS(fit_5, file = "fit_5.rds")
-saveRDS(fit_6, file = "fit_6.rds")
+saveRDS(fit_1, file = here("models", "fit_1.rds"))
+saveRDS(fit_2, file = here("models", "fit_2.rds"))
+saveRDS(fit_3, file = here("models", "fit_3.rds"))
+saveRDS(fit_4, file = here("models", "fit_4.rds"))
+saveRDS(fit_5, file = here("models", "fit_5.rds"))
+saveRDS(fit_6, file = here("models", "fit_6.rds"))
 
 sapply(0:6, function(x) {
   mod <- get(paste0("fit_",x))
