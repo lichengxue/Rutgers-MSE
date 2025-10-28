@@ -216,6 +216,8 @@ fit_3 <- fit_wham(input_3, do.brps = FALSE, do.sdrep = TRUE, do.osa = FALSE, do.
 
 saveRDS(fit_3, here("models","OM_base.RDS"))
 
+#### BELOW IS NOT NECESSARY ####
+
 # This section will work on how to generate an OM (OM_b) based on the fitted OM (OM_a) before 
 
 # plot_wham_output(fit_3, out.type = "png")
@@ -263,8 +265,7 @@ OMa$sdrep
 ####
 ###################
 
-# Below you should be familiar # 
-############################
+
 # WAA 
 OMa$input$data$waa
 # MAA 
