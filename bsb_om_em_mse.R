@@ -13,21 +13,24 @@
 #
 # -----------------------------------------------------------------------------
 
-
-
 # Generate OMb
 library(wham)
 library(whamMSE)
 library(dplyr)
+library(here)
 # suppose we have feedback years = 3
 n_feedback_years = 3
 
 #### READ IN SAVED OPERATING MODEL OBJECT ####
 OMa <- readRDS(here("models","OM_base.RDS"))
+# Read in the asap models
+asap <- read_asap3_dat(here("data",c("north.dat","south.dat")))
+temp <- prepare_wham_input(asap)
+
 
 # Load Ecov data 
-north_bt <- read.csv(("bsb_bt_temp_nmab_1959-2022.csv"))
-south_bt <- read.csv(("bsb_bt_temp_smab_1959-2022.csv"))
+north_bt <- read.csv(here("data","bsb_bt_temp_nmab_1959-2022.csv"))
+south_bt <- read.csv(here("data","bsb_bt_temp_smab_1959-2022.csv"))
 ecov <- list(label = c("North_BT","South_BT"))
 ecov$mean <- cbind(north_bt[,'mean'], south_bt[,'mean'])
 ecov$mean <- t(t(ecov$mean) - apply(ecov$mean,2,mean))
@@ -395,9 +398,33 @@ lines(data$input$data$Ecov_obs[,1],col = "red")
 plot(ecov$mean[,2],type = "l")
 lines(data$input$data$Ecov_obs[,2],col = "red")
 
+#move
+seasons = c(rep(1,5),2,rep(1,5))/12
+move = list(stock_move = c(TRUE,FALSE), separable = TRUE) #north moves, south doesn't
+move$must_move = array(0,dim = c(2,length(seasons),2))	
+#if north stock in region 2 (south) must move back to region 1 (north) at the end of interval 5 right before spawning
+move$must_move[1,5,2] <- 1 
+move$can_move = array(0, dim = c(2,length(seasons),2,2))
+move$can_move[1,c(1:4),2,1] <- 1 #only north stock can move and in seasons prior to spawning and after spawning
+move$can_move[1,c(7:11),1,2] <- 1 #only north stock can move and in seasons prior to spawning and after spawning
+move$can_move[1,5,2,] <- 1 #north stock can (and must) move in last season prior to spawning back to north 
+mus <- array(0, dim = c(2,length(seasons),2,1))
+mus[1,1:11,1,1] <- 0.02214863 #see here("2023.RT.Runs","transform_SS_move_rates.R") for how these numbers are derived.
+mus[1,1:11,2,1] <- 0.3130358
+move$mean_vals <- mus 
+move$mean_model = matrix("stock_constant", 2,1)
+#prior distribution on movement parameters 
+move$use_prior <- array(0, dim = c(2,length(seasons),2,1))
+move$use_prior[1,1,1,1] <- 1
+move$use_prior[1,1,2,1] <- 1
+move$prior_sigma <- array(0, dim = c(2,length(seasons),2,1))
+move$prior_sigma[1,1,1,1] <- 0.2
+move$prior_sigma[1,1,2,1] <- 0.2
+
 # Configure the Estimation Model (EM) for use within the loop
 # Add movement prior!
 move_em <- move
+n_seasons <- length(fracyr_seasons)
 move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
 move_em$use_prior[1, 1, , ] <- 1
 move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
