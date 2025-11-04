@@ -174,3 +174,17 @@ the operating model
 > 
 > Error in TMB::MakeADFun(temp$data, temp$par, DLL = "wham", random = temp$random,  : 
 >   A map factor length must equal parameter length
+
+
+## 11/04/2025 log
+
+- Running into issues with `bsb_om_em_mse.R`
+- The problem is with the final chunk of code `loop_through_fn`
+
+> Error in project_wham(em, proj.opts = proj_opts, MakeADFun.silent = TRUE) : 
+>
+> ** Error setting up projections: **
+> proj.opts$avg.yrs is not a subset of model years.
+
+- This issue now appears across all the code that uses `loop_through_fn`
+- Might be related to an updated in the WHAM package (https://timjmiller.github.io/wham/reference/project_wham.html)
