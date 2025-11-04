@@ -188,3 +188,11 @@ the operating model
 
 - This issue now appears across all the code that uses `loop_through_fn`
 - Might be related to an updated in the WHAM package (https://timjmiller.github.io/wham/reference/project_wham.html)
+- Good example code for comparing model performance - https://github.com/lichengxue/whamMSE/blob/UMassD-MSE/GBK_Example/Update_MSE_code.R#L474
+
+- *IMPORTANT: Uninstalled the whamMSE@Projection-MSE branch and reinstalled the regular WHAM*
+
+`{r}
+remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
+`
+
