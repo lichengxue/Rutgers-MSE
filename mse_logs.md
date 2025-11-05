@@ -196,3 +196,12 @@ the operating model
 remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
 `
 
+## 11/05/2025 log
+
+- Cheng reported that the bug referred to on 11/04/2025 has been fixed
+- Attempting to reinstall `whamMSE@Projection-MSE` - *Successful*
+- Ran `bsb_mse_example_01.R` after reinstallation - *Successful*
+- Ran `bsb_om_em_mse.R` after reinstallation - *Successful*
+
+
+
