@@ -203,5 +203,8 @@ remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
 - Ran `bsb_mse_example_01.R` after reinstallation - *Successful*
 - Ran `bsb_om_em_mse.R` after reinstallation - *Successful*
 
+## 11/11/2025 log
 
+- Working through `bsb_om.R` and `bsb_om_em.R` and making notes
+- I think I understand how environmental covariates and linked and modeled in whamMSE
 
