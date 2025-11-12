@@ -205,6 +205,10 @@ remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
 
 ## 11/11/2025 log
 
-- Working through `bsb_om.R` and `bsb_om_em.R` and making notes
+- Working through `bsb_om.R` and `bsb_om_em_mse.R` and making notes
 - I think I understand how environmental covariates and linked and modeled in whamMSE
 
+## 11/12/2025 log
+
+- Trying to understand the four surveys in `bsb_om.R`.
+- Put some thought into how to structure code for simulating the operating model sevearl hundred times
