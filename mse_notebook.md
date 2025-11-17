@@ -37,7 +37,8 @@ This is the most interesting part of how the model is set up. Movement between t
 two subunits is defined by several parameters. `basic_info$NAA_Where` decides which ages 
 can be in which subunit on January 1st of each year. Here we have set it up so 
 that Age 1 in Stock 1 cannot be in Stock 2 on January 1st and that No individuals 
-from Stock 2 move into region 1.
+from Stock 2 move into region 1. Black sea bass present natal homing and therefore we 
+allow for it in the model.
 
 ```r
 basic_info$NAA_where <- array(1, dim = c(n_stocks, n_regions, n_ages))
@@ -245,21 +246,63 @@ years the assessment happens.
 The model can run into convergence issues. Potential fixes are shown below.
 
 - Changing the years-at-age for Year 1 in the estimation model to _equilibrium_
-  - ```r
-      NAA_re$N1_model[] = "equilibrium"
-    ```
+
+```r
+NAA_re$N1_model[] = "equilibrium"
+```
+
 - Increasing `sigma_vals` for the operating model to 0.75 to reflect the real stock assessment
 - Increase `prior_sigma` of the estimation model's movement 
 - Change whether we want to estimate movement with the MSE function (`loop_through_fn`)
 - Change the operating model's population dynamics model from a state-space model with random effects to 
 just a state-space model. This needs to be reflected in the estimation model as well. 
-    - ```r
-      sigma <- "rec"
-      re_cor <- "iid"
-      ini.opt <- "age-specific-fe"
-      sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
-      sigma_vals[, , 1] <- 0.75 # Recruitment sigma
-      # For the estimation model
-      NAA_re$sigma = "rec"
-      ```
+
+```r
+sigma <- "rec"
+re_cor <- "iid"
+ini.opt <- "age-specific-fe"
+sigma_vals <- array(0.2, dim = c(n_stocks, n_regions, n_ages)) # NAA survival sigma
+sigma_vals[, , 1] <- 0.75 # Recruitment sigma
+# For the estimation model
+NAA_re$sigma = "rec"
+```
+
+## Building in environment linkage to recruitment
+
+### bsb_operating_model.R (OM.R)
+
+> NOTE: This is pure 'wham' code to construct an operating model for black sea bass
+> This allows us to create operating models with environment linkages
+
+$$ \mu = \beta + \theta_{y-1} $$
+
+Regarding some questions I had regarding selectivity of fleets and surveys in `bsb_om.R`.
+
+1. I believe those surveys are corresponding to north rec cpa, north vast, 
+south rec cpa, south vast. I have no clue what they stand for, but it might be 
+helpful to check the BSB stock assessment report (should be publicly available 
+somewhere).
+2. VAST (Vector autoregressive spatio-temporal model) seems to be a model-based 
+survey index that integrated several survey indices together as a way to better 
+represent the population trend. That said, using this single index might be more 
+useful than using multiple different survey indices from different areas, years. 
+So in short, VAST is a "modeled" survey that doesn't exist but better represents 
+the population. 
+3. You can see each fleet or survey age composition 
+might have different likelihood distributions (e.g. logistic-normal, dir-mult, 
+logistic-normal-ar1-miss0 or whatever), that's because for the age compositional data, 
+we need to find out the best possible distribution to explain why the ago composition 
+from a data stream looks like that. After many prior evaluations and model diagnostics, 
+those are our best guesses that can result in best stock assessment model performance. 
+In short, the distribution we chose for each data stream is most likely to generate 
+the age composition data we received/collected for BSB. Those likelihoods are just 
+used to fit the real data and generate our OM, in the EM, we don't need to use 
+that complicated likelihood, we can use a simple likelihood distribution 
+(e.g. multinomial distribution) to generate our own pseudo data (including age compositional data), 
+the likelihood you chose just indicate different levels or shape of observation 
+error, which is not the focus of our study. 
+
+### bsb_om_em_mse.R (OM_EM_MSE.R)
+
+Notes on how recruitment is linked to the environment. 
 
