@@ -13,11 +13,14 @@
 #
 # -----------------------------------------------------------------------------
 
-# Generate OMb
 library(wham)
 library(whamMSE)
 library(dplyr)
 library(here)
+
+# Source reusable functions from `functions/reusable_functions.R`
+source(here("functions","reusable_functions.R"))
+
 # suppose we have feedback years = 3
 n_feedback_years = 3
 
@@ -26,7 +29,6 @@ OMa <- readRDS(here("models","OM_base.RDS"))
 # Read in the asap models
 asap <- read_asap3_dat(here("data",c("north.dat","south.dat")))
 temp <- prepare_wham_input(asap)
-
 
 # Load Ecov data 
 north_bt <- read.csv(here("data","bsb_bt_temp_nmab_1959-2022.csv"))
@@ -104,68 +106,6 @@ fracyr_seasons
 fracyr_indices <- OMa$input$data$fracyr_indices[1,]
 fracyr_indices
 
-# You don't need to understand this function, it's used to back calculate fracyr_indices...
-reconcile_index_timing <- function(fracyr_seasons, fracyr_indices, index_seasons,
-                                   boundary_rule = c("next_season", "this_season")) {
-  boundary_rule <- match.arg(boundary_rule)
-  n_seasons <- length(fracyr_seasons)
-  stopifnot(length(index_seasons) == length(fracyr_indices))
-  if (abs(sum(fracyr_seasons) - 1) > 1e-8) stop("fracyr_seasons must sum to 1.")
-  if (any(index_seasons < 1 | index_seasons > n_seasons)) stop("index_seasons out of range.")
-  
-  starts <- c(0, cumsum(fracyr_seasons))     # season starts, length n_seasons+1
-  eps <- sqrt(.Machine$double.eps)
-  
-  # Clamp absolute times into [0, 1)
-  x <- pmin(pmax(fracyr_indices, 0), 1 - eps)
-  
-  # Implied seasons from the absolute times (for diagnostics)
-  x_nudge <- if (boundary_rule == "next_season") {
-    y <- x + eps
-    y[x == 0] <- eps
-    y
-  } else {
-    pmax(x - eps, 0)
-  }
-  implied_season <- findInterval(x_nudge, starts, rightmost.closed = FALSE)
-  implied_season[implied_season < 1] <- 1
-  implied_season[implied_season > n_seasons] <- n_seasons
-  
-  # Use the provided index_seasons but report mismatches
-  mismatch <- which(implied_season != index_seasons)
-  if (length(mismatch)) {
-    msg <- paste0(
-      "Note: ", length(mismatch), " index/indices have implied_season != index_seasons: [",
-      paste(mismatch, collapse = ", "), "]. Using index_seasons as authoritative."
-    )
-    message(msg)
-  }
-  
-  # Offsets within the chosen seasons
-  season_len <- fracyr_seasons[index_seasons]
-  offset <- x - starts[index_seasons]   # may be ~0 at boundaries
-  # Clean tiny negatives/positives; clamp to [0, season_len)
-  offset[abs(offset) < eps] <- 0
-  offset <- pmin(pmax(offset, 0), season_len - eps)
-  
-  # Proportion within season (0..1)
-  prop_within <- ifelse(season_len > 0, offset / season_len, 0)
-  
-  # Rebuild absolute times from the chosen decomposition
-  fracyr_rebuilt <- starts[index_seasons] + offset
-  fracyr_rebuilt <- pmin(pmax(fracyr_rebuilt, 0), 1 - eps)
-  
-  list(
-    starts = starts,
-    implied_season = implied_season,
-    used_season = index_seasons,
-    within_season_offset = offset,        # absolute fraction of year inside season
-    within_season_prop = prop_within,     # 0..1 within-season proportion
-    fracyr_rebuilt = fracyr_rebuilt       # should match input up to ~1e-8
-  )
-}
-
-
 fracyr_seasons <- OMa$input$data$fracyr_seasons
 fracyr_indices <- OMa$input$data$fracyr_indices[1,]
 index_seasons <- OMa$input$data$index_seasons
@@ -180,13 +120,14 @@ index_info <- list(
   index_cv = rep(0.5,4), # just make up some values, we will revisit and modify later
   index_Neff = rep(25,4), # just make up some values, we will revisit and modify later
   fracyr_indices = fracyr_indices, 
-  q = OMa$rep$q[1,], # q should be estiamted from OMa
+  q = OMa$rep$q[1,], # q should be estiamted from OMa; q is survey catchability
   use_indices = rep(1,4), # Assume I use all annual total index data 
   use_index_paa = rep(1,4), # Assume I use all annual proportion at age index data 
   units_indices = rep(2,4), 
   units_index_paa = rep(2,4) 
 )
 
+#### GENERATE ESTIMATION MODEL  ####
 info <- generate_basic_info(n_stocks = 2, n_regions = 2, n_indices = 4, n_fleets = 4, n_seasons = 11,
                             base.years = year_start:year_end, n_feedback_years = MSE_years, n_ages = 8,
                             catch_info = catch_info, index_info = index_info, user_waa = user_waa, 
@@ -207,7 +148,7 @@ sel$initial_pars <- list(
   rep(c(0.5,1),c(6,2)), #north rec
   c(5,1), #south comm
   c(5,1),	#south rec
-  rep(c(0.5,1,1),c(1,1,6)), #north rec cpa
+  rep(c(0.5,1,1),c(1,1,6)), #north rec cpa - What does this mean?
   rep(c(0.5,1),c(4,4)), #north vast
   rep(c(0.5,1,1),c(2,4,2)), #south rec cpa
   rep(c(0.5,1),c(1,7)) #south vast
@@ -223,11 +164,6 @@ sel$fix_pars <- list(
   2:8 #south vast
 )
 sel$re = rep("none",8) # assume no time varying selectivity
- 
-# inverse logit
-gen.invlogit <- function(eta, low, upp, s = 1) {
-  low + (upp - low) * plogis(s * eta)
-}
 
 # double check q
 OMa$parList$logit_q
@@ -256,7 +192,7 @@ sigma_vals <- array(NA, dim = c(n_stocks, n_regions, n_ages))
 sigma_vals <- exp(OMa$parList$log_NAA_sigma)
 
 NAA_re = list(recruit_model = 2,
-              recruit_pars = list(exp(9.032686), exp(9.753513)), # You need to convert to natral scale
+              recruit_pars = list(exp(9.032686), exp(9.753513)), # You need to convert to natural scale
               sigma_vals = sigma_vals,
               sigma = list("rec+1","rec+1"), 
               cor = list("2dar1","2dar1"), # I use 2dar1, it seems the EM is working well
@@ -411,7 +347,7 @@ move$can_move[1,5,2,] <- 1 #north stock can (and must) move in last season prior
 mus <- array(0, dim = c(2,length(seasons),2,1))
 mus[1,1:11,1,1] <- 0.02214863 #see here("2023.RT.Runs","transform_SS_move_rates.R") for how these numbers are derived.
 mus[1,1:11,2,1] <- 0.3130358
-move$mean_vals <- mus 
+move$mean_vals <- mus # Set prior values for movement
 move$mean_model = matrix("stock_constant", 2,1)
 #prior distribution on movement parameters 
 move$use_prior <- array(0, dim = c(2,length(seasons),2,1))
@@ -478,6 +414,8 @@ mod <- loop_through_fn(
   hcr = hcr,
   save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
 )
+
+saveRDS(mod, here("models","whamMSE_models","mod1.RDS"))
 
 # SSB in OM
 plot(mod$om$rep$SSB[,1], type = "l")
