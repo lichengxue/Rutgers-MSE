@@ -278,10 +278,10 @@ $$ \mu = \beta + \theta_{y-1} $$
 
 Regarding some questions I had regarding selectivity of fleets and surveys in `bsb_om.R`.
 
-1. I believe those surveys are corresponding to north rec cpa, north vast, 
+1. Regarding the surveys in selectivity - I believe those surveys are corresponding to north rec cpa, north vast, 
 south rec cpa, south vast. I have no clue what they stand for, but it might be 
 helpful to check the BSB stock assessment report (should be publicly available 
-somewhere).
+somewhere) - This is from the 2023 stock assessment file set [here](https://apps-nefsc.fisheries.noaa.gov/saw/sasi_files.php?year=2023&species_id=33&stock_id=6&review_type_id=5&info_type_id=6&map_type_id=&filename=2023_BSB_UNIT_ppt_TOR3_VAST.pdf)
 2. VAST (Vector autoregressive spatio-temporal model) seems to be a model-based 
 survey index that integrated several survey indices together as a way to better 
 represent the population trend. That said, using this single index might be more 
@@ -306,3 +306,7 @@ error, which is not the focus of our study.
 
 Notes on how recruitment is linked to the environment. 
 
+### Glossary of terms
+
+CPA / RECCPA - Recreational catch-per-angler (One of the indices used in the WHAM model) 
+VAST - VAST is the modeled abundance survey (It's constructed from several of the existing surveys)
