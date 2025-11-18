@@ -1,8 +1,7 @@
 # -----------------------------------------------------------------------------
 #
-#           Management Strategy Evaluation (MSE) Example for
-#           Black Sea Bass (BSB) with Environmental Drivers
-#                   BSB MSE - Environmental Drivers
+#                         OPERATING MODEL FOR 
+#           Black Sea Bass (BSB) with Environmental Covariates
 #
 #
 # Author(s): Chengxue Li [Original], Jeewantha Bandara [This version]
@@ -16,13 +15,14 @@
 
 library(wham)
 library(here)
-# getwd()
-# list.files()
+
+#### READ IN ASAP MODEL ####
 asap <- read_asap3_dat(here("data",c("north.dat","south.dat")))
 temp <- prepare_wham_input(asap)
 
-#basic_info
-basic_info <- list(region_names = c("North", "South"), stock_names = paste0("BSB_", c("North", "South"))) 
+#### BASIC INFO ####
+basic_info <- list(region_names = c("North", "South"), 
+                   stock_names = paste0("BSB_", c("North", "South"))) 
 seasons = c(rep(1,5),2,rep(1,5))/12
 basic_info$fracyr_seasons <- seasons
 #each age other than 1 (recruitment) for north stock can be in either region on Jan 1 
@@ -32,7 +32,8 @@ basic_info$NAA_where[2,1,] = 0 #stock 2, any age can't be in region 1 (stock 2 d
 #average recruitment over years 2000+ for SSB40 BRPs
 basic_info$XSPR_R_avg_yrs <- which(temp$years>1999)
 basic_info$XSPR_R_opt <- 2 #use average of recruitments (random effects), not expected/predicted given last time step
-#############################################
+
+#### ENVIRONMENTAL COVARIATE ####
 north_bt <- read.csv(here("data","bsb_bt_temp_nmab_1959-2022.csv"))
 south_bt <- read.csv(here("data","bsb_bt_temp_smab_1959-2022.csv"))
 ecov <- list(label = c("North_BT","South_BT"))
@@ -54,9 +55,10 @@ ecov_3$recruitment_how[2,2] <- "controlling-lag-0-linear" #both
 # Check ecov_3 again
 ecov_3$recruitment_how
 
-#############################################
-#NAA_re
-NAA_re = list(sigma = list("rec+1","rec+1"), cor = list("2dar1","2dar1"), N1_model = rep("equilibrium",2))
+# NAA_re - A state-space model and the random effects are 2nd degree 
+# (both the year and age/parameter) first order auto-correlation
+NAA_re = list(sigma = list("rec+1","rec+1"), cor = list("2dar1","2dar1"), 
+              N1_model = rep("equilibrium",2))
 
 #Wasn't decoupled in RT
 #NAA_re$decouple_recruitment <- FALSE
@@ -83,9 +85,8 @@ x[1,1,1:3] <- 1:3
 x[2,2,1:3] <- 4:6
 NAA_re$cor_map <- x
 # input_1$map$trans_NAA_rho <- factor(x)
-#############################################
 
-#move
+#### MOVEMENT MODEL ####
 move = list(stock_move = c(TRUE,FALSE), separable = TRUE) #north moves, south doesn't
 move$must_move = array(0,dim = c(2,length(seasons),2))	
 #if north stock in region 2 (south) must move back to region 1 (north) at the end of interval 5 right before spawning
@@ -106,10 +107,10 @@ move$use_prior[1,1,2,1] <- 1
 move$prior_sigma <- array(0, dim = c(2,length(seasons),2,1))
 move$prior_sigma[1,1,1,1] <- 0.2
 move$prior_sigma[1,1,2,1] <- 0.2
-#############################################
 
-#############################################
-#selectivity
+
+#### SELECTIVITY ####
+
 sel <- list(n_selblocks = 8,
             model = rep(c("age-specific","logistic","age-specific"),
                         c(2,2,4)))
@@ -138,20 +139,16 @@ sel$re <- rep(c(
   c(1, 1, 2, 1, 1, 2))
 
 
-#############################################
-
-#############################################
-#catch_info
+#### CATCH INFORMATION ####
+# Effective sampling size
 catch_Neff <- temp$data$catch_Neff
 catch_Neff[] <- 1000
 catch_info <- list(catch_Neff = catch_Neff)
 x <- temp$data$selblock_pointer_fleets
 x[] <- rep(1:4, each = NROW(x))
 catch_info$selblock_pointer_fleets = x
-#############################################
 
-#############################################
-#index_info
+#### SURVEY INDEX INFORMATION ####
 index_Neff <- temp$data$index_Neff
 index_Neff[] <- 1000
 index_info <- list(index_Neff = index_Neff)
@@ -162,10 +159,8 @@ index_info$selblock_pointer_indices = x
 index_info$initial_index_sd_scale <- c(5,1,5,1)
 index_info$map_index_sd_scale <- c(1,NA,2,NA)
 
-#############################################
 
-#############################################
-#age_comp
+#### AGE COMPOSITION IN CATCH AND SURVEY ####
 age_comp = list(
   fleets = c("dir-mult","logistic-normal-miss0","logistic-normal-ar1-miss0","logistic-normal-ar1-miss0"), 
   indices = c("logistic-normal-miss0","dir-mult","logistic-normal-ar1-miss0","logistic-normal-ar1-miss0"))
@@ -181,15 +176,20 @@ M_sigma_map <- diag(1:2)
 M_re_model <- matrix("none", 2,2)
 M_re_model[1,1] <- "iid_y"
 M_re_model[2,2] <- "iid_y"
-M_list <- list(re_model = M_re_model, re_map = M_re_map, sigma_map = M_sigma_map, sigma_vals = M_sigma_vals)
+M_list <- list(re_model = M_re_model, re_map = M_re_map, 
+               sigma_map = M_sigma_map, sigma_vals = M_sigma_vals)
 #############################################
 
-input_1 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, basic_info = basic_info, move = move, ecov = ecov_1, catch_info = catch_info,
+input_1 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, 
+                              basic_info = basic_info, move = move, 
+                              ecov = ecov_1, catch_info = catch_info,
                               index_info = index_info, age_comp = age_comp)
+
 input_1$fleet_names <- paste0(rep(c("North_", "South_"),each = 2), temp$fleet_names)
 input_1$index_names <- paste0(rep(c("North_", "South_"),c(2,2)), temp$index_names)
 
-fit_1 <- fit_wham(input_1, do.brps = FALSE, do.sdrep = TRUE, do.osa = FALSE, do.retro = FALSE)
+fit_1 <- fit_wham(input_1, do.brps = FALSE, do.sdrep = TRUE, 
+                  do.osa = FALSE, do.retro = FALSE)
 
 temp <- fit_1$input
 temp$par <- fit_1$parList
@@ -199,20 +199,26 @@ x <- fit_wham(temp, do.brps = FALSE, do.fit = FALSE) #same
 # fit_1 <- do_reference_points(fit_1)
 # fit_1 <- do_sdreport(fit_1)
 
-input_0 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, basic_info = basic_info, move = move, ecov = ecov_0, catch_info = catch_info,
+input_0 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re,
+                              basic_info = basic_info, move = move, 
+                              ecov = ecov_0, catch_info = catch_info,
                               index_info = index_info, age_comp = age_comp)
 # input_0$par <- fit_1$parList
 # input_0$par$Ecov_beta_R[] <- 0
-fit_0 <- fit_wham(input_0, do.brps = FALSE, do.sdrep = FALSE, do.osa = FALSE, do.retro = FALSE)
+fit_0 <- fit_wham(input_0, do.brps = FALSE, do.sdrep = FALSE, 
+                  do.osa = FALSE, do.retro = FALSE)
 #not quite as good as using better starting values
 fit_0$fn(fits[[1]]$opt$par)
 fit_0 <- do_retro_peels(fit_0, use.mle = FALSE)
 
 # Focusing on ecov on both recruitment
-input_3 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, basic_info = basic_info, move = move, ecov = ecov_3, catch_info = catch_info,
+input_3 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, 
+                              basic_info = basic_info, move = move, 
+                              ecov = ecov_3, catch_info = catch_info,
                               index_info = index_info, age_comp = age_comp)
 input_3$par <- fit_0$parList
-fit_3 <- fit_wham(input_3, do.brps = FALSE, do.sdrep = TRUE, do.osa = FALSE, do.retro = TRUE)
+fit_3 <- fit_wham(input_3, do.brps = FALSE, do.sdrep = TRUE, 
+                  do.osa = FALSE, do.retro = TRUE)
 
 saveRDS(fit_3, here("models","OM_base.RDS"))
 
