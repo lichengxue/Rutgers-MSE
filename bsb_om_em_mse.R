@@ -18,6 +18,13 @@ library(whamMSE)
 library(dplyr)
 library(here)
 
+# This code is set to run on a server as well as a personal computer
+
+#### RUN ENVIRONMENT ####
+# Options for run environment
+run_env_opts <- c("local","annotate2","amarel")
+run_env <- run_env_opts[1]
+
 # Source reusable functions from `functions/reusable_functions.R`
 source(here("functions","reusable_functions.R"))
 
@@ -27,8 +34,8 @@ n_feedback_years = 3
 #### READ IN SAVED OPERATING MODEL OBJECT ####
 OMa <- readRDS(here("models","OM_base.RDS"))
 # Read in the asap models
-asap <- read_asap3_dat(here("data",c("north.dat","south.dat")))
-temp <- prepare_wham_input(asap)
+asap <- wham::read_asap3_dat(here("data",c("north.dat","south.dat")))
+temp <- wham::prepare_wham_input(asap)
 
 # Load Ecov data 
 north_bt <- read.csv(here("data","bsb_bt_temp_nmab_1959-2022.csv"))
@@ -54,11 +61,10 @@ ecov$logsigma <- 'est_1'  # fix obs. error to be close to 0
 ecov$year <- c(north_bt[,'year'],2023:2025)
 ecov$use_obs <- matrix(1, NROW(ecov$mean),NCOL(ecov$mean))
 ecov$process_model <- "ar1"
-ecov$process_mean_vals <- apply(ecov$mean, 2, mean)
+ecov$process_mean_vals <- apply(ecov$mean, 2, mean) # Mean them by the column (the two subunits)
 ecov$recruitment_how <- matrix(c("controlling-lag-0-linear","none","none","controlling-lag-0-linear"), 2,2)
 
 # Now Let's work on data input
-
 n_stocks = 2
 n_regions = 2
 n_ages = 8
@@ -74,6 +80,10 @@ user_maturity[,1:hist_years,] <- OMa$input$data$mature
 for (i in (hist_years+1):(hist_years+3)) user_maturity[,i,] <- OMa$input$data$mature[, 33,, drop=FALSE] # Assume MAA for the next 3 years is the same as MAA for the terminal year (i.e, 2021)
 
 # Check WAA Pointers 
+# Trying to figure out what the `10` here represents
+# The commercial and recreational fleets for north and south are 1,2,3,4
+# The VAST and recreational CPA surveys for north and south are 5,6,7,8
+# Spawning stock biomass WAA are 9,10
 dim(OMa$input$data$waa) # 10 33  8
 OMa$input$data$waa_pointer_fleets
 OMa$input$data$waa_pointer_indices
@@ -110,6 +120,7 @@ fracyr_seasons <- OMa$input$data$fracyr_seasons
 fracyr_indices <- OMa$input$data$fracyr_indices[1,]
 index_seasons <- OMa$input$data$index_seasons
 
+
 out <- reconcile_index_timing(fracyr_seasons, fracyr_indices, index_seasons,
                               boundary_rule = "next_season")
 
@@ -128,7 +139,7 @@ index_info <- list(
 )
 
 #### GENERATE ESTIMATION MODEL  ####
-info <- generate_basic_info(n_stocks = 2, n_regions = 2, n_indices = 4, n_fleets = 4, n_seasons = 11,
+info <- whamMSE::generate_basic_info(n_stocks = 2, n_regions = 2, n_indices = 4, n_fleets = 4, n_seasons = 11,
                             base.years = year_start:year_end, n_feedback_years = MSE_years, n_ages = 8,
                             catch_info = catch_info, index_info = index_info, user_waa = user_waa, 
                             user_maturity = user_maturity, fracyr_spawn = fracyr_spawn, fracyr_seasons = fracyr_seasons)
@@ -165,6 +176,7 @@ sel$fix_pars <- list(
 )
 sel$re = rep("none",8) # assume no time varying selectivity
 
+# Catchability - 
 # double check q
 OMa$parList$logit_q
 OMa$input$data$q_lower # 0
@@ -222,9 +234,12 @@ x[2,2,1:3] <- 4:6
 NAA_re$cor_map <- x
 # input_1$map$trans_NAA_rho <- factor(x)
 
-input_Ecov <- prepare_wham_input(
-  basic_info = basic_info, selectivity = sel, M = M, NAA_re = NAA_re, ecov = ecov,
-  catch_info = catch_info_use, index_info = index_info_use, F = F_info)
+input_Ecov <- whamMSE::prepare_wham_input(basic_info = basic_info, 
+                                          selectivity = sel, 
+                                          M = M, NAA_re = NAA_re, ecov = ecov, 
+                                          catch_info = catch_info_use, 
+                                          index_info = index_info_use, 
+                                          F = F_info)
 
 # I forgot to add update waa pointer in the previous version
 # IF I don't specify the pointer, then only the first WAA will be used 
@@ -251,6 +266,7 @@ input_Ecov$data$index_Neff[1:33,] <- OMa$input$data$index_Neff
 idx1 <- which(asap[[1]]$dat$use_index == 1)
 idx2 <- which(asap[[2]]$dat$use_index == 1)
 
+# Setting up effective sample size for the future
 Neff1 <- do.call(cbind, lapply(idx1, function(i) asap[[1]]$dat$IAA_mats[[i]][, 12, drop = FALSE]))
 Neff2 <- do.call(cbind, lapply(idx2, function(i) asap[[2]]$dat$IAA_mats[[i]][, 12, drop = FALSE]))
 
@@ -263,16 +279,18 @@ index_Neff <- rbind(index_Neff, index_Neff[rep(33, 3), , drop = FALSE])
 input_Ecov$data$index_Neff <- index_Neff
 
 # Must have this!
-input_Ecov <- update_input_index_info(input_Ecov,
+input_Ecov <- whamMSE::update_input_index_info(input_Ecov,
                                       agg_index_sigma = input_Ecov$data$agg_index_sigma, 
                                       index_Neff = input_Ecov$data$index_Neff)
 
 # Catch data
-
+# Do you want the model to know the total catch for a year?
 input_Ecov$data$agg_catch_sigma[1:33,] <- OMa$input$data$agg_catch_sigma
 input_Ecov$data$use_agg_catch[1:33,] <- OMa$input$data$use_agg_catch
 input_Ecov$data$use_catch_paa[1:33,] <- OMa$input$data$use_catch_paa
+# paa - Proportion at age
 
+# Use the last year to set values from 2022 to 2025
 for (i in 34:36) input_Ecov$data$agg_catch_sigma[i,] = OMa$input$data$agg_catch_sigma[33,]
 
 input_Ecov$data$catch_Neff[1:33,] <- OMa$input$data$catch_Neff
@@ -299,7 +317,7 @@ length(OMa$rep$Ecov_x[,1])
 Ecov_re <- OMa$parList$Ecov_re
 
 input_Ecov$par$Ecov_re[1:nrow(Ecov_re),] <- Ecov_re
-input_Ecov$data$do_simulate_Ecov_re <- 0
+input_Ecov$data$do_simulate_Ecov_re <- 0 # Turn off the random generation of random effects
 
 unfitted_om <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
 
@@ -318,6 +336,7 @@ input_Ecov$random <- NULL
 om_ecov <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
 saveRDS(om_ecov, file = "om_ecov.rds")
 
+# Update the fishing mortality of the operating model
 om_with_data <- update_om_fn(om_ecov, seed = 123, random = random)
 
 # Check SSB and Ecov in one realization
@@ -384,6 +403,7 @@ NAA_re_em$N1_model[] = "equilibrium"
 # You can use 'est_1' to let EM estimate obs error for Ecov
 ecov_em <- ecov
 ecov_em$logsigma <- 'est_1' 
+
 
 # Execute the MSE loop for one realization
 mod <- loop_through_fn(
