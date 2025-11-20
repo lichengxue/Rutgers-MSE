@@ -37,13 +37,13 @@ OMa <- readRDS(here("models","OM_base.RDS"))
 asap <- wham::read_asap3_dat(here("data",c("north.dat","south.dat")))
 temp <- wham::prepare_wham_input(asap)
 
-# Load Ecov data 
+#### SET ECOVARIATE DATA ####
 north_bt <- read.csv(here("data","bsb_bt_temp_nmab_1959-2022.csv"))
 south_bt <- read.csv(here("data","bsb_bt_temp_smab_1959-2022.csv"))
 ecov <- list(label = c("North_BT","South_BT"))
 ecov$mean <- cbind(north_bt[,'mean'], south_bt[,'mean'])
 ecov$mean <- t(t(ecov$mean) - apply(ecov$mean,2,mean))
-ecov$mean <- rbind(ecov$mean,matrix(0, n_feedback_years, ncol(ecov$mean)))   
+ecov$mean <- rbind(ecov$mean,matrix(0, n_feedback_years, ncol(ecov$mean)))
 # Now we assume the future 3 years temp will be the same the temp in 2022
 plot(ecov$mean[,1], type = "l") # remember this is deviations not the actual values
 
@@ -64,6 +64,7 @@ ecov$process_model <- "ar1"
 ecov$process_mean_vals <- apply(ecov$mean, 2, mean) # Mean them by the column (the two subunits)
 ecov$recruitment_how <- matrix(c("controlling-lag-0-linear","none","none","controlling-lag-0-linear"), 2,2)
 
+#### BASIC INPUT DATA ####
 # Now Let's work on data input
 n_stocks = 2
 n_regions = 2
@@ -72,7 +73,7 @@ n_ages = 8
 # Define MSE timeframe
 year_start <- 1989
 year_end   <- 2021
-MSE_years  <- 3
+MSE_years  <- 3 # This will be 2023,2024,2025
 hist_years = length(year_start:year_end)
 total_years = length(year_start:(year_end+3))
 user_maturity <- array(NA, dim = c(n_stocks,total_years,n_ages))
@@ -90,6 +91,7 @@ OMa$input$data$waa_pointer_indices
 OMa$input$data$waa_pointer_ssb
 OMa$input$data$waa_pointer_M = OMa$input$data$waa_pointer_ssb
 
+# Set WAA for projection years. We use `user_waa` for this purpose
 user_waa <- list()
 user_waa$waa <- array(NA, dim = c(10,33+n_feedback_years,8))
 user_waa$waa[,1:33,] <- OMa$input$data$waa
@@ -100,8 +102,10 @@ user_waa$waa_pointer_totcatch <- OMa$input$data$waa_pointer_ssb
 user_waa$waa_pointer_ssb <- OMa$input$data$waa_pointer_ssb
 user_waa$waa_pointer_M <- OMa$input$data$waa_pointer_M
 
+# Read in when they spawn from the `asap` model
 fracyr_spawn = asap[[1]]$dat$fracyr_spawn
 
+# Set catch information for the estimation model
 catch_info <- list(
   catch_cv = c(asap[[1]]$dat$catch_cv[1,],asap[[2]]$dat$catch_cv[1,]), # just use the value from first year, we can make the CV to be yearly-varying later on 
   catch_Neff = c(asap[[1]]$dat$catch_Neff[1,],asap[[2]]$dat$catch_Neff[1,]), # just use the value from first year, we can make the CV to be yearly-varying later on 
@@ -110,7 +114,7 @@ catch_info <- list(
 )
 
 # Need to back calculate fraction_index:
-
+# This is an issue with how fractional years/indices are calculated between WHAM and ASAP
 fracyr_seasons <- OMa$input$data$fracyr_seasons
 fracyr_seasons
 fracyr_indices <- OMa$input$data$fracyr_indices[1,]
@@ -120,13 +124,15 @@ fracyr_seasons <- OMa$input$data$fracyr_seasons
 fracyr_indices <- OMa$input$data$fracyr_indices[1,]
 index_seasons <- OMa$input$data$index_seasons
 
-
+# Call in the function from `reusable_functions.R`
 out <- reconcile_index_timing(fracyr_seasons, fracyr_indices, index_seasons,
                               boundary_rule = "next_season")
 
-# What you likely want:
-fracyr_indices = out$fracyr_rebuilt         # sanity check: equals fracyr_indices (≈ within 1e-8)
+# This is a sanity check
+# Sanity check: equals fracyr_indices (≈ within 1e-8)
+fracyr_indices = out$fracyr_rebuilt
 
+# Create a list of survey indices information
 index_info <- list(
   index_cv = rep(0.5,4), # just make up some values, we will revisit and modify later
   index_Neff = rep(25,4), # just make up some values, we will revisit and modify later
@@ -138,28 +144,33 @@ index_info <- list(
   units_index_paa = rep(2,4) 
 )
 
-#### GENERATE ESTIMATION MODEL  ####
+#### GENERATE OPERATING MODEL  ####
+# Generate basic information for the WHAM OM
 info <- whamMSE::generate_basic_info(n_stocks = 2, n_regions = 2, n_indices = 4, n_fleets = 4, n_seasons = 11,
                             base.years = year_start:year_end, n_feedback_years = MSE_years, n_ages = 8,
                             catch_info = catch_info, index_info = index_info, user_waa = user_waa, 
                             user_maturity = user_maturity, fracyr_spawn = fracyr_spawn, fracyr_seasons = fracyr_seasons)
 
+# Get the basic information to generate the operating and estimation model
 basic_info <- info$basic_info
 catch_info_use <- info$catch_info
 index_info_use <- info$index_info
+# For 'F', we need to get the actual estimated values from the fitted model
 F_info <- info$F 
 F_info$F[1:33,] <- OMa$rep$Fbar[,1:4] # we must use newly estimated F values from OMa!
 
 # Selectivity
+# For selectivity, we are going to set some basic values and fix certain parameters so they
+# won't be estimated by the model
 sel <- list(n_selblocks = 8,
             model = rep(c("age-specific","logistic","age-specific"),
                         c(2,2,4)))
 sel$initial_pars <- list(
   rep(c(0.5,1),c(3,5)), #north comm
   rep(c(0.5,1),c(6,2)), #north rec
-  c(5,1), #south comm
+  c(5,1), #south comm - South commercial and recreational are logistic selectivity
   c(5,1),	#south rec
-  rep(c(0.5,1,1),c(1,1,6)), #north rec cpa - What does this mean?
+  rep(c(0.5,1,1),c(1,1,6)), #north rec cpa 
   rep(c(0.5,1),c(4,4)), #north vast
   rep(c(0.5,1,1),c(2,4,2)), #south rec cpa
   rep(c(0.5,1),c(1,7)) #south vast
@@ -174,6 +185,7 @@ sel$fix_pars <- list(
   3:8, #south rec cpa
   2:8 #south vast
 )
+# There's no time varying selectivity. Thereby no random effects
 sel$re = rep("none",8) # assume no time varying selectivity
 
 # Catchability - 
@@ -183,26 +195,32 @@ OMa$input$data$q_lower # 0
 OMa$input$data$q_upper # 1000
 gen.invlogit(OMa$parList$logit_q,low = 0, upp = 1000)
 
+# Now we are going to use the selectivity values from the fitted model and use them
+# as initial values for the selectivity parameters
 # selectivity used estimated Sel vals from OMa!
 sel_vals = gen.invlogit(OMa$parList$logit_selpars,low = 0, upp = 1)
 sel_vals
 sel$initial_pars <- list(
   sel_vals[1,1:8], #north comm
   sel_vals[2,1:8], #north rec
-  sel_vals[3,9:10], #south comm
-  sel_vals[4,9:10],	#south rec
+  sel_vals[3,9:10], #south comm - Because of logistic selectivity
+  sel_vals[4,9:10],	#south rec - Because of logistic selectivity
   sel_vals[5,1:8], #north rec cpa
   sel_vals[6,1:8], #north vast
   sel_vals[7,1:8], #south rec cpa
   sel_vals[8,1:8] #south vast
 )
 
+# Set mortality for the model
 M <- list(model = "constant", initial_means = array(0.4, dim = c(n_stocks, n_regions, n_ages)))
 # Assume constant M here (But be careful if you have M re later)
 
+# Set process errors for Numbers at age (NAA)
+# Use the process errors from the fitted model
 sigma_vals <- array(NA, dim = c(n_stocks, n_regions, n_ages))
 sigma_vals <- exp(OMa$parList$log_NAA_sigma)
 
+# This is the NAA random effects
 NAA_re = list(recruit_model = 2,
               recruit_pars = list(exp(9.032686), exp(9.753513)), # You need to convert to natural scale
               sigma_vals = sigma_vals,
@@ -211,8 +229,8 @@ NAA_re = list(recruit_model = 2,
               N1_model = rep("age-specific-fe",2))
 
 # Below NAA re config are from previous code
-
 # set fixed values for NAA re for stock 1 in south on Jan 1
+# This is because of natal homing
 NAA_re$sigma_vals <- array(1, dim = c(2,2,temp$data$n_ages))
 NAA_re$sigma_vals[1,2,2:temp$data$n_ages] <- 0.05 #2+ fixed to SCAA-ish for North fish in south on Jan 1.
 NAA_re$sigma_map <- array(NA, dim = c(2,2,temp$data$n_ages))
@@ -222,6 +240,7 @@ NAA_re$sigma_map[1,1,2:temp$data$n_ages] <- 2
 NAA_re$sigma_map[2,2,2:temp$data$n_ages] <- 4
 
 #turn off estimation of AR1 cor parameters for north population in the south on Jan 1
+# Because there's no recruitment that happens for the north popuations when they are in the southern region
 x <- array(NA, dim = dim(temp$par$trans_NAA_rho))
 x[1,1,1:2] <- 1:2
 x[2,,1] <- 3
@@ -234,7 +253,10 @@ x[2,2,1:3] <- 4:6
 NAA_re$cor_map <- x
 # input_1$map$trans_NAA_rho <- factor(x)
 
-input_Ecov <- whamMSE::prepare_wham_input(basic_info = basic_info, 
+
+# Setup the basic wham model for ecovariate modeling
+# We then keep adding stuff like WAA, and initial ecovariate parameters to it
+input_Ecov <- wham::prepare_wham_input(basic_info = basic_info, 
                                           selectivity = sel, 
                                           M = M, NAA_re = NAA_re, ecov = ecov, 
                                           catch_info = catch_info_use, 
@@ -255,12 +277,15 @@ input_Ecov$par$Ecov_beta_R <- OMa$parList$Ecov_beta_R
 input_Ecov$par$log_N1 <- OMa$parList$log_NAA[,,1,]
 input_Ecov$par$log_N1[2,1,] = 0
 
+# Copy the same aggrgate index process errors from the fitted model
 input_Ecov$data$agg_index_sigma[1:33,] <- OMa$input$data$agg_index_sigma
 input_Ecov$data$use_indices[1:33,] <- OMa$input$data$use_indices
 input_Ecov$data$use_index_paa[1:33,] <- OMa$input$data$use_index_paa
 
+# Use the last years process errors for aggregate indices for future projections
 for (i in 34:36) input_Ecov$data$agg_index_sigma[i,] = OMa$input$data$agg_index_sigma[33,]
 
+# Use the effective sampling size from the fitted model
 input_Ecov$data$index_Neff[1:33,] <- OMa$input$data$index_Neff
 
 idx1 <- which(asap[[1]]$dat$use_index == 1)
@@ -272,18 +297,19 @@ Neff2 <- do.call(cbind, lapply(idx2, function(i) asap[[2]]$dat$IAA_mats[[i]][, 1
 
 index_Neff <- cbind(Neff1, Neff2)
 
-# append 3 new rows, each equal to row 33
+# append 3 new rows, each equal to row 33. This is for the future projection years
 stopifnot(nrow(index_Neff) >= 33)
 index_Neff <- rbind(index_Neff, index_Neff[rep(33, 3), , drop = FALSE])
 
+# Set the effective sampling size in `input_Ecov`
 input_Ecov$data$index_Neff <- index_Neff
 
-# Must have this!
+# Must have this!: Update the model index information with this information
 input_Ecov <- whamMSE::update_input_index_info(input_Ecov,
                                       agg_index_sigma = input_Ecov$data$agg_index_sigma, 
                                       index_Neff = input_Ecov$data$index_Neff)
 
-# Catch data
+# Catch data. Same story as the index data
 # Do you want the model to know the total catch for a year?
 input_Ecov$data$agg_catch_sigma[1:33,] <- OMa$input$data$agg_catch_sigma
 input_Ecov$data$use_agg_catch[1:33,] <- OMa$input$data$use_agg_catch
@@ -306,19 +332,22 @@ input_Ecov$data$catch_Neff[1:33,] <- catch_Neff
 stopifnot(nrow(catch_Neff) >= 33)
 catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33, 3), , drop = FALSE])
 
-# Must have this!
+# Must have this!: Update `input_Ecov` from using this catch effective size information
 input_Ecov <- update_input_catch_info(input_Ecov,
                                       agg_catch_sigma = input_Ecov$data$agg_catch_sigma, 
                                       catch_Neff = input_Ecov$data$catch_Neff)
 
+# Check for correct dimensions
 length(OMa$parList$Ecov_re[,1])
 length(OMa$rep$Ecov_x[,1])
 
+# Copy the ecovariate random effects from the fitted model
 Ecov_re <- OMa$parList$Ecov_re
 
 input_Ecov$par$Ecov_re[1:nrow(Ecov_re),] <- Ecov_re
 input_Ecov$data$do_simulate_Ecov_re <- 0 # Turn off the random generation of random effects
 
+# Generate the unfitted wham operating model object: `unfitted om`
 unfitted_om <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = FALSE, MakeADFun.silent = TRUE)
 
 # Remove Ecov_re from the list of random effects TMB will estimate
@@ -327,16 +356,20 @@ if ("Ecov_re" %in% unfitted_om$input$random) {
 } # we want to keep Ecov time series always the same as original, otherwise the TMB will generate a "FAKE" ecov time series by a random seed
 
 # Important! We need to plug in AR1 coefficients for NAA here!
+# Copy them using the fitted model
 # We need to update 2dAR1 pars for NAA 
 input_Ecov$par$trans_NAA_rho = OMa$parList$trans_NAA_rho
 
 # Prepare OM object
 random <- input_Ecov$random
 input_Ecov$random <- NULL
+# Fit the operating model for ecovariate MSE after removing the estimation for ecovariate random effects
+# IMPORTANT STEP HERE
 om_ecov <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = TRUE, MakeADFun.silent = TRUE)
 saveRDS(om_ecov, file = "om_ecov.rds")
 
 # Update the fishing mortality of the operating model
+# IMPORTANT: THIS IS THE FINAL OPERATING MODEL WE WILL FEED INTO THE MSE
 om_with_data <- update_om_fn(om_ecov, seed = 123, random = random)
 
 # Check SSB and Ecov in one realization
@@ -353,7 +386,9 @@ lines(data$input$data$Ecov_obs[,1],col = "red")
 plot(ecov$mean[,2],type = "l")
 lines(data$input$data$Ecov_obs[,2],col = "red")
 
-#move
+#### ESTIMATION MODEL ####
+
+# Set the movement model for the estimation model
 seasons = c(rep(1,5),2,rep(1,5))/12
 move = list(stock_move = c(TRUE,FALSE), separable = TRUE) #north moves, south doesn't
 move$must_move = array(0,dim = c(2,length(seasons),2))	
@@ -401,6 +436,8 @@ NAA_re_em = NAA_re
 NAA_re_em$N1_model[] = "equilibrium"
 
 # You can use 'est_1' to let EM estimate obs error for Ecov
+# Here we are going to use the same environment link for the estimation model as the opearting model
+# We will also keep the same observation error for the ecovariate
 ecov_em <- ecov
 ecov_em$logsigma <- 'est_1' 
 
@@ -435,7 +472,7 @@ mod <- loop_through_fn(
   save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
 )
 
-saveRDS(mod, here("models","whamMSE_models","mod1.RDS"))
+saveRDS(mod, here("models","whamMSE_models","mod_2025_11_20.RDS"))
 
 # SSB in OM
 plot(mod$om$rep$SSB[,1], type = "l")
