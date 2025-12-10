@@ -212,3 +212,27 @@ remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
 
 - Trying to understand the four surveys in `bsb_om.R`.
 - Put some thought into how to structure code for simulating the operating model sevearl hundred times
+
+## 11/19/2025 log
+
+- Setting up Annotate2 server (accessed on annotate2.sebs.rutgers.edu) to run simulations
+
+## 12/10/2025 log
+
+- Uninstalling `whamMSE` (Projection-MSE branch) and `wham`.
+- Installing `wham` from Cheng's development branch for Guassian temperature linkage (`remotes::install_github("lichengxue/wham@Gussian_Rec")`)
+- Used the following commands
+  - `remove.packages("wham","whamMSE")`
+  - `remotes::install_github("lichengxue/wham@Gussian_Rec")`
+  - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+- Renamed `Test_code.R` to `bsb_gaussian_test_code.R` - This runs the gaussian link
+- Running into issues with `bsb_gaussian_test_code.R` after this update
+
+> > temp <- wham::prepare_wham_input(asap)
+>
+> --Creating input---------------------------------------------------------------------------------------------------------------------
+> 
+> Error in set_basic_info(input, basic_info) : 
+>   'list' object cannot be coerced to type 'integer'
+
+
