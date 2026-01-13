@@ -123,3 +123,4 @@ fit_1 <- fit_wham(input_1, do.fit = FALSE,
 temp <- fit_1$input
 temp$par <- fit_1$parList
 temp$par$trans_NAA_rho
+
