@@ -235,4 +235,34 @@ remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
 > Error in set_basic_info(input, basic_info) : 
 >   'list' object cannot be coerced to type 'integer'
 
+## 12/16/2026 log
+
+- Meeting with John and Cheng
+- Reduce the spatial complexity of the model from two regions to one region
+- IMPORTANT: Now we are going for a single region and single stock and testing for
+the guassian function.
+
+## 01/13/2026 log
+
+- Previous issues with the 'Gaussian branch' appears to be resolved
+- Uninstalled and reinstalled the `wham` and `whamMSE` branches
+- Used the following commands
+  - `remove.packages("wham","whamMSE")`
+  - `remotes::install_github("lichengxue/wham@Gussian_Rec")`
+  - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+- Ran the original code for `bsb_om_em_mse.R`
+- Gave the follow error/warning: _The code still ran_
+
+> Warning message:
+> In fit_wham(em_input, do.retro = do.retro, do.osa = do.osa, do.brps = TRUE,  :
+>   
+> ** Error during model fit. **
+> Check for unidentifiable parameters.
+> 
+> Lapack routine dgesv: system is exactly singular: U[184,184] = 0
+
+- Output is saved in `Rutgers-MSE/models/mod_2026_01_13.RDS`
+
+- *IMPORTANT* - Wrote a single region version of the base model for future development
+
 
