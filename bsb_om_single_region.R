@@ -88,7 +88,7 @@ NAA_re$cor_map <- x
 # input_1$map$trans_NAA_rho <- factor(x)
 
 #### MOVEMENT MODEL ####
-move = list(stock_move = c(TRUE,FALSE), separable = TRUE) #north moves, south doesn't
+move = list(stock_move = c(FALSE,FALSE), separable = TRUE) #north moves, south doesn't
 move$must_move = array(0,dim = c(2,length(seasons),2))	
 #if north stock in region 2 (south) must move back to region 1 (north) at the end of interval 5 right before spawning
 move$must_move[1,5,2] <- 1 
@@ -234,7 +234,7 @@ input_3$par <- fit_0$parList
 fit_3 <- fit_wham(input_3, do.brps = FALSE, do.sdrep = TRUE, 
                   do.osa = FALSE, do.retro = TRUE)
 
-saveRDS(fit_3, here("models","OM_base.RDS"))
+saveRDS(fit_3, here("models","operating_models","OM_base_single_region.RDS"))
 
 #### BELOW IS NOT NECESSARY ####
 
