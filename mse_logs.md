@@ -239,7 +239,7 @@ remotes::install_github("lichengxue/whamMSE",dependencies = FALSE)
 
 - Meeting with John and Cheng
 - Reduce the spatial complexity of the model from two regions to one region
-- IMPORTANT: Now we are going for a single region and single stock and testing for
+- **IMPORTANT**: Now we are going for a single region and single stock and testing for
 the guassian function.
 
 ## 01/13/2026 log
@@ -263,6 +263,6 @@ the guassian function.
 
 - Output is saved in `Rutgers-MSE/models/mod_2026_01_13.RDS`
 
-- *IMPORTANT* - Wrote a single region version of the base model for future development
+- **IMPORTANT** - Wrote a single region version of the base model for future development
 
 
