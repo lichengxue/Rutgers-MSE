@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 #     BSB MSE with Environmental Drivers - Gaussian Recruitment Test
 # -----------------------------------------------------------------------------
-
+setwd("C:/Users/liche/Desktop/Rutgers-MSE")
 library(wham)
 library(whamMSE)
 library(dplyr)
@@ -14,8 +14,7 @@ library(here)
 n_feedback_years <- 3
 
 OMa  <- readRDS("models/OM_base.RDS")
-asap <- wham::read_asap3_dat("data/north.dat")
-temp <- wham::prepare_wham_input(asap)
+asap <- read_asap3_dat("data/north.dat")
 
 # ----------------------------------
 # 1. Ecov data
@@ -47,10 +46,7 @@ ecov$process_model      <- "ar1"
 ecov$process_mean_vals  <- apply(ecov$mean, 2, mean)
 
 # keep linear Ecov–R links defined, but we will zero out Ecov_beta_R later
-ecov$recruitment_how <- matrix(
-  c("controlling-lag-0-linear"),
-  nrow = 1, byrow = TRUE
-)
+ecov$recruitment_how <- matrix("controlling-lag-0-linear")
 
 # ----------------------------------
 # 2. Biological / MSE time frame
@@ -73,14 +69,12 @@ for (i in (hist_years+1):(hist_years+MSE_years)) {
   user_maturity[, i, ] <- OMa$input$data$mature[1, 33, , drop = FALSE]
 }
 
-# WAA and pointers
-OMa$input$data$waa_pointer_M <- OMa$input$data$waa_pointer_ssb
 
 user_waa <- list()
 user_waa$waa <- array(NA, dim = c(5, 33 + n_feedback_years, 8))
-user_waa$waa[, 1:33, ] <- OMa$input$data$waa[c(1,2,5,6,9)]
+user_waa$waa[, 1:33, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]
 for (i in 34:36) {
-  user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), 33, , drop = FALSE]
+  user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), 33, ]
 }
 user_waa$waa_pointer_fleets   <- 1:2
 user_waa$waa_pointer_indices  <- 3:4
@@ -88,7 +82,7 @@ user_waa$waa_pointer_totcatch <- 5
 user_waa$waa_pointer_ssb      <- 5
 user_waa$waa_pointer_M        <- 5
 
-fracyr_spawn <- asap[[1]]$dat$fracyr_spawn
+fracyr_spawn <- 0.5
 
 # ----------------------------------
 # 3. Catch info
@@ -182,7 +176,7 @@ info <- whamMSE::generate_basic_info(
   n_regions      = 1,
   n_indices      = 2,
   n_fleets       = 2,
-  n_seasons      = 11,
+  n_seasons      = 1, 
   base.years     = year_start:year_end,
   n_feedback_years = MSE_years,
   n_ages         = 8,
@@ -191,7 +185,7 @@ info <- whamMSE::generate_basic_info(
   user_waa       = user_waa,
   user_maturity  = user_maturity,
   fracyr_spawn   = fracyr_spawn,
-  fracyr_seasons = fracyr_seasons
+  fracyr_seasons = 1
 )
 
 basic_info     <- info$basic_info
@@ -230,7 +224,7 @@ sigma_vals <- array(vals,
 
 NAA_re <- list(
   recruit_model = 2,
-  recruit_pars  = list(exp(9.032686)), # fixed mean recruit by stock
+  recruit_pars  = exp(9.032686), # fixed mean recruit by stock
   sigma_vals    = sigma_vals,
   sigma         = list("rec+1"),
   cor           = list("2dar1"),
@@ -259,23 +253,6 @@ input_Ecov <- update_waa(input_Ecov, waa_info = waa_info)
 input_Ecov$par$Ecov_process_pars <- OMa$parList$Ecov_process_pars[,1, drop = FALSE] # just north
 input_Ecov$par$Ecov_beta_R       <- OMa$parList$Ecov_beta_R[1,1, ,drop = FALSE]
 
-# For this Gaussian test, zero out the linear Ecov–R effect:
-if (!is.null(input_Ecov$par$Ecov_beta_R)) {input_Ecov$par$Ecov_beta_R[] <- 0}
-
-# ----------------------------------
-# 8. Gaussian T–recruit settings
-# ----------------------------------
-input_Ecov$data$use_gauss_T_rec <- 1L         # turn ON Gaussian link
-input_Ecov$data$Ecov_rec_T_col  <- 0L         # first Ecov column = North_BT
-
-temp_col <- input_Ecov$data$Ecov_rec_T_col + 1L
-temp_vec <- input_Ecov$data$Ecov_obs[, temp_col]
-
-input_Ecov$par$Topt_rec      <- 0.0          # peak at 0
-input_Ecov$par$log_width_rec <- log(1.0)     # width = 1
-n_stocks <- input_Ecov$data$n_stocks
-input_Ecov$par$beta_T_rec    <- rep(1, n_stocks)
-
 # ----------------------------------
 # 9. Fix N1, catch & index info
 # ----------------------------------
@@ -287,10 +264,8 @@ input_Ecov$data$use_indices[1:33,]     <- OMa$input$data$use_indices[,1:2]
 input_Ecov$data$use_index_paa[1:33,]   <- OMa$input$data$use_index_paa[,1:2]
 
 for (i in 34:36) {
-  input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[33,1:2]
+  input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[33,1:2, drop = FALSE]
 }
-
-input_Ecov$data$index_Neff[1:33,] <- OMa$input$data$index_Neff[,1:2]
 
 idx1 <- which(asap[[1]]$dat$use_index == 1)
 
@@ -330,7 +305,7 @@ input_Ecov <- update_input_catch_info(
 # ----------------------------------
 # 10. Force Ecov_re pattern: -2 to +2, 1989–2023
 # ----------------------------------
-Ecov_re <- OMa$parList$Ecov_re
+Ecov_re <- OMa$parList$Ecov_re[,1, drop = FALSE]
 ny      <- nrow(Ecov_re)
 
 yrs <- ecov$year      # 1959–2025, length 67
@@ -338,16 +313,16 @@ yrs <- ecov$year      # 1959–2025, length 67
 # Year indices for 1989–2023 (should be 35 yrs)
 idx <- which(yrs >= 1989 & yrs <= 2023)
 
-# Gradient -2 → +2 over these years
-grad <- seq(-2, 2, length.out = length(idx))
-
 # Start with zeros, then fill desired segment
-input_Ecov$par$Ecov_re[,] <- 0
-input_Ecov$par$Ecov_re[idx, 1] <- grad    # North BT
+input_Ecov$par$Ecov_re[1:64,] <- Ecov_re
 
 # Do not simulate Ecov_re – use the values above
 input_Ecov$data$do_simulate_Ecov_re <- 0
 
+# Remove Ecov_re from the list of random effects TMB will estimate
+if ("Ecov_re" %in% input_Ecov$random) {
+  input_Ecov$random <- input_Ecov$random[input_Ecov$random != "Ecov_re"]
+}
 # ----------------------------------
 # 11. Build OM, remove Ecov_re from random, plug NAA rho
 # ----------------------------------
