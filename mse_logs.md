@@ -265,4 +265,5 @@ the guassian function.
 
 - **IMPORTANT** - Wrote a single region version of the base model for future development
 
+**IMPORTANT** - <span style="color:red"> *ANY OPERATING MODEL THAT GIVES THIS ERROR SHOULD BE DISCARDED*</span>
 
