@@ -109,7 +109,7 @@ M_re_opt    = list(M_model = "constant", M_mean = 0.4)
 # NOTE: WE ARE SAVING THE ecov_3 model as the base model
 ##### Ecov-1 model #####
 input_1 <- prepare_wham_input(asap, selectivity = sel, NAA_re = NAA_re, 
-                              basic_info = basic_info, 
+                              basic_info = basic_info, M = M_re_opt,
                               ecov = ecov_1, catch_info = catch_info,
                               index_info = index_info)
 
