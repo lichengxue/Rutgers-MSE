@@ -384,7 +384,6 @@ mod <- loop_through_fn(
   em_info = info,
   random = random,
   sel_em = sel,
-  eov_em = ecov_em,
   M_em = M,
   NAA_re_em = NAA_re_em,
   em.opt = list(
