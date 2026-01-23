@@ -191,6 +191,25 @@ input_Ecov <- update_waa(input_Ecov, waa_info = waa_info)
 input_Ecov$par$Ecov_process_pars <- OMa$parList$Ecov_process_pars[,1, drop = FALSE] # just north
 input_Ecov$par$Ecov_beta_R       <- OMa$parList$Ecov_beta_R[1,1, ,drop = FALSE]
 
+# For this Gaussian test, zero out the linear Ecov–R effect:
+if (!is.null(input_Ecov$par$Ecov_beta_R)) {
+  input_Ecov$par$Ecov_beta_R[] <- 0
+}
+
+# ----------------------------------
+# 8. Gaussian T–recruit settings
+# ----------------------------------
+input_Ecov$data$use_gauss_T_rec <- 1L         # turn ON Gaussian link
+input_Ecov$data$Ecov_rec_T_col  <- 0L         # first Ecov column = North_BT
+
+temp_col <- input_Ecov$data$Ecov_rec_T_col + 1L
+temp_vec <- input_Ecov$data$Ecov_obs[, temp_col]
+
+input_Ecov$par$Topt_rec      <- 0.0          # peak at 0
+input_Ecov$par$log_width_rec <- log(1.0)     # width = 1
+n_stocks <- input_Ecov$data$n_stocks
+input_Ecov$par$beta_T_rec    <- rep(1, n_stocks)
+
 # ----------------------------------
 # 9. Fix N1, catch & index info
 # ----------------------------------
