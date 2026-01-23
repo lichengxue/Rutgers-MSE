@@ -268,165 +268,165 @@ if ("Ecov_re" %in% input_Ecov$random) {
 unfitted_om <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = FALSE,
                         MakeADFun.silent = TRUE)
 
-# if ("Ecov_re" %in% unfitted_om$input$random) {
-#   input_Ecov$random <- unfitted_om$input$random[
-#     unfitted_om$input$random != "Ecov_re"
-#   ]
-# }
-# 
-# input_Ecov$par$trans_NAA_rho <- OMa$parList$trans_NAA_rho
-# 
-# random <- input_Ecov$random
-# input_Ecov$random <- NULL
-# 
-# om_ecov <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = TRUE,
-#                     MakeADFun.silent = TRUE)
-# saveRDS(om_ecov, file = "om_ecov.rds")
-# 
-# om_with_data <- update_om_fn(om_ecov, seed = 123, random = random)
-# 
-# # ----------------------------------
-# # 12. Diagnostics: show Gaussian T–R relationship
-# # ----------------------------------
-# # Temperature series (North BT)
-# T_series <- om_with_data$rep$Ecov_x[, 1]
-# 
-# # Recruitment (stock 1, region 1, age 1)
-# rec1 <- om_with_data$rep$NAA[1,1,,1]
-# nyr  <- length(rec1)
-# yrs_rec <- year_start:(year_start + nyr - 1)
-# 
-# # par(mfrow = c(2,1), mar = c(4,4,2,1))
-# 
-# plot(yrs, T_series, type = "l", xlab = "Year", ylab = "Ecov_x (North BT)",
-#      main = "Ecov_x (North BT) with -2 → +2 ramp, 1989–2023")
-# abline(v = c(1989, 2023), lty = 2, col = "grey")
-# 
-# plot(yrs_rec, rec1, type = "l", xlab = "Year", ylab = "Recruitment (stock 1)",
-#      main = "Recruitment vs Gaussian temperature effect")
-# 
-# par(mfrow = c(1,1))
-# 
-# # Optional: overlay theoretical Gaussian scalar (rescaled)
-# Topt  <- om_with_data$parList$Topt_rec
-# width <- exp(om_with_data$parList$log_width_rec)
-# g_scalar <- exp(-0.5 * ((T_series - Topt) / width)^2)
-# 
-# # Rescale for visualization
-# g_scaled <- max(rec1, na.rm = TRUE) * g_scalar / max(g_scalar, na.rm = TRUE)
-# 
-# lines(yrs, g_scaled, col = "red", lwd = 2)
-# legend("topright", legend = c("Recruitment (stock 1)", "Scaled Gaussian(T)"),
-#        col = c("black","red"), lty = 1, bty = "n")
-# 
-# 
-# #move
-# seasons = c(rep(1,5),2,rep(1,5))/12
-# move = list(stock_move = c(TRUE,FALSE), separable = TRUE) #north moves, south doesn't
-# move$must_move = array(0,dim = c(2,length(seasons),2))	
-# #if north stock in region 2 (south) must move back to region 1 (north) at the end of interval 5 right before spawning
-# move$must_move[1,5,2] <- 1 
-# move$can_move = array(0, dim = c(2,length(seasons),2,2))
-# move$can_move[1,c(1:4),2,1] <- 1 #only north stock can move and in seasons prior to spawning and after spawning
-# move$can_move[1,c(7:11),1,2] <- 1 #only north stock can move and in seasons prior to spawning and after spawning
-# move$can_move[1,5,2,] <- 1 #north stock can (and must) move in last season prior to spawning back to north 
-# mus <- array(0, dim = c(2,length(seasons),2,1))
-# mus[1,1:11,1,1] <- 0.02214863 #see here("2023.RT.Runs","transform_SS_move_rates.R") for how these numbers are derived.
-# mus[1,1:11,2,1] <- 0.3130358
-# move$mean_vals <- mus # Set prior values for movement
-# move$mean_model = matrix("stock_constant", 2,1)
-# #prior distribution on movement parameters 
-# move$use_prior <- array(0, dim = c(2,length(seasons),2,1))
-# move$use_prior[1,1,1,1] <- 1
-# move$use_prior[1,1,2,1] <- 1
-# move$prior_sigma <- array(0, dim = c(2,length(seasons),2,1))
-# move$prior_sigma[1,1,1,1] <- 0.2
-# move$prior_sigma[1,1,2,1] <- 0.2
-# 
-# # Configure the Estimation Model (EM) for use within the loop
-# # Add movement prior!
-# move_em <- move
-# n_seasons <- length(fracyr_seasons)
-# move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-# move_em$use_prior[1, 1, , ] <- 1
-# move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
-# 
-# n_seasons = 11
-# # Specify the Harvest Control Rule (HCR)
-# hcr <- list()
-# hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
-# hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
-# 
-# assess.interval <- 3 # Assessments occur every 3 years
-# base.years <- year_start:year_end
-# terminal.year <- tail(base.years, 1)
-# last.year <- 2024
-# assess.years <- seq(terminal.year, last.year - assess.interval, by = assess.interval)
-# 
-# # Remember to use this config for EM NAAre
-# NAA_re_em = NAA_re
-# NAA_re_em$N1_model[] = "equilibrium"
-# 
-# # You can use 'est_1' to let EM estimate obs error for Ecov
-# ecov_em <- ecov
-# ecov_em$logsigma <- 'est_1' 
-# 
-# # Execute the MSE loop for one realization
-# mod <- loop_through_fn(
-#   om = om_with_data,
-#   em_info = info,
-#   random = random,
-#   sel_em = sel,
-#   M_em = M,
-#   NAA_re_em = NAA_re_em,
-#   move_em = move_em,
-#   em.opt = list(
-#     separate.em = FALSE,
-#     separate.em.type = 3,
-#     do.move = TRUE,
-#     est.move = TRUE
-#   ),
-#   update_catch_info = list(agg_catch_sigma = input_Ecov$data$agg_catch_sigma, 
-#                            catch_Neff = input_Ecov$data$catch_Neff),
-#   update_index_info = list(agg_index_sigma = input_Ecov$data$agg_index_sigma, 
-#                            index_Neff = input_Ecov$data$index_Neff),
-#   assess_years = assess.years,
-#   assess_interval = assess.interval,
-#   base_years = base.years,
-#   year.use = length(base.years),
-#   add.years = TRUE,
-#   seed = 123,
-#   hcr = hcr,
-#   save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
-# )
-# 
-# 
-# # Execute the MSE loop for one realization
-# mod <- loop_through_fn(
-#   om = om_with_data,
-#   em_info = info,
-#   random = random,
-#   sel_em = sel,
-#   M_em = M,
-#   ecov_em = ecov_em,
-#   NAA_re_em = NAA_re_em,
-#   move_em = move_em,
-#   em.opt = list(
-#     separate.em = FALSE,
-#     separate.em.type = 3,
-#     do.move = TRUE,
-#     est.move = TRUE
-#   ),
-#   update_catch_info = list(agg_catch_sigma = input_Ecov$data$agg_catch_sigma, 
-#                            catch_Neff = input_Ecov$data$catch_Neff),
-#   update_index_info = list(agg_index_sigma = input_Ecov$data$agg_index_sigma, 
-#                            index_Neff = input_Ecov$data$index_Neff),
-#   assess_years = assess.years,
-#   assess_interval = assess.interval,
-#   base_years = base.years,
-#   year.use = length(base.years),
-#   add.years = TRUE,
-#   seed = 123,
-#   hcr = hcr,
-#   save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
-# )
+if ("Ecov_re" %in% unfitted_om$input$random) {
+  input_Ecov$random <- unfitted_om$input$random[
+    unfitted_om$input$random != "Ecov_re"
+  ]
+}
+
+input_Ecov$par$trans_NAA_rho <- OMa$parList$trans_NAA_rho[1,1,,drop = FALSE]
+
+random <- input_Ecov$random
+input_Ecov$random <- NULL
+
+om_ecov <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = TRUE,
+                    MakeADFun.silent = TRUE)
+saveRDS(om_ecov, file = "om_ecov.rds")
+
+om_with_data <- update_om_fn(om_ecov, seed = 123, random = random)
+
+# ----------------------------------
+# 12. Diagnostics: show Gaussian T–R relationship
+# ----------------------------------
+# Temperature series (North BT)
+T_series <- om_with_data$rep$Ecov_x[, 1]
+
+# Recruitment (stock 1, region 1, age 1)
+rec1 <- om_with_data$rep$NAA[1,1,,1]
+nyr  <- length(rec1)
+yrs_rec <- year_start:(year_start + nyr - 1)
+
+# par(mfrow = c(2,1), mar = c(4,4,2,1))
+
+plot(yrs, T_series, type = "l", xlab = "Year", ylab = "Ecov_x (North BT)",
+     main = "Ecov_x (North BT) with -2 → +2 ramp, 1989–2023")
+abline(v = c(1989, 2023), lty = 2, col = "grey")
+
+plot(yrs_rec, rec1, type = "l", xlab = "Year", ylab = "Recruitment (stock 1)",
+     main = "Recruitment vs Gaussian temperature effect")
+
+par(mfrow = c(1,1))
+
+# Optional: overlay theoretical Gaussian scalar (rescaled)
+Topt  <- om_with_data$parList$Topt_rec
+width <- exp(om_with_data$parList$log_width_rec)
+g_scalar <- exp(-0.5 * ((T_series - Topt) / width)^2)
+
+# Rescale for visualization
+g_scaled <- max(rec1, na.rm = TRUE) * g_scalar / max(g_scalar, na.rm = TRUE)
+
+lines(yrs, g_scaled, col = "red", lwd = 2)
+legend("topright", legend = c("Recruitment (stock 1)", "Scaled Gaussian(T)"),
+       col = c("black","red"), lty = 1, bty = "n")
+
+
+#move
+seasons = c(rep(1,5),2,rep(1,5))/12
+move = list(stock_move = c(TRUE,FALSE), separable = TRUE) #north moves, south doesn't
+move$must_move = array(0,dim = c(2,length(seasons),2))
+#if north stock in region 2 (south) must move back to region 1 (north) at the end of interval 5 right before spawning
+move$must_move[1,5,2] <- 1
+move$can_move = array(0, dim = c(2,length(seasons),2,2))
+move$can_move[1,c(1:4),2,1] <- 1 #only north stock can move and in seasons prior to spawning and after spawning
+move$can_move[1,c(7:11),1,2] <- 1 #only north stock can move and in seasons prior to spawning and after spawning
+move$can_move[1,5,2,] <- 1 #north stock can (and must) move in last season prior to spawning back to north
+mus <- array(0, dim = c(2,length(seasons),2,1))
+mus[1,1:11,1,1] <- 0.02214863 #see here("2023.RT.Runs","transform_SS_move_rates.R") for how these numbers are derived.
+mus[1,1:11,2,1] <- 0.3130358
+move$mean_vals <- mus # Set prior values for movement
+move$mean_model = matrix("stock_constant", 2,1)
+#prior distribution on movement parameters
+move$use_prior <- array(0, dim = c(2,length(seasons),2,1))
+move$use_prior[1,1,1,1] <- 1
+move$use_prior[1,1,2,1] <- 1
+move$prior_sigma <- array(0, dim = c(2,length(seasons),2,1))
+move$prior_sigma[1,1,1,1] <- 0.2
+move$prior_sigma[1,1,2,1] <- 0.2
+
+# Configure the Estimation Model (EM) for use within the loop
+# Add movement prior!
+move_em <- move
+n_seasons <- length(fracyr_seasons)
+move_em$use_prior <- array(0, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+move_em$use_prior[1, 1, , ] <- 1
+move_em$prior_sigma <- array(0.2, dim = c(n_stocks, n_seasons, n_regions, n_regions - 1))
+
+n_seasons = 11
+# Specify the Harvest Control Rule (HCR)
+hcr <- list()
+hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
+hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
+
+assess.interval <- 3 # Assessments occur every 3 years
+base.years <- year_start:year_end
+terminal.year <- tail(base.years, 1)
+last.year <- 2024
+assess.years <- seq(terminal.year, last.year - assess.interval, by = assess.interval)
+
+# Remember to use this config for EM NAAre
+NAA_re_em = NAA_re
+NAA_re_em$N1_model[] = "equilibrium"
+
+# You can use 'est_1' to let EM estimate obs error for Ecov
+ecov_em <- ecov
+ecov_em$logsigma <- 'est_1'
+
+# Execute the MSE loop for one realization
+mod <- loop_through_fn(
+  om = om_with_data,
+  em_info = info,
+  random = random,
+  sel_em = sel,
+  M_em = M,
+  NAA_re_em = NAA_re_em,
+  move_em = move_em,
+  em.opt = list(
+    separate.em = FALSE,
+    separate.em.type = 3,
+    do.move = TRUE,
+    est.move = TRUE
+  ),
+  update_catch_info = list(agg_catch_sigma = input_Ecov$data$agg_catch_sigma,
+                           catch_Neff = input_Ecov$data$catch_Neff),
+  update_index_info = list(agg_index_sigma = input_Ecov$data$agg_index_sigma,
+                           index_Neff = input_Ecov$data$index_Neff),
+  assess_years = assess.years,
+  assess_interval = assess.interval,
+  base_years = base.years,
+  year.use = length(base.years),
+  add.years = TRUE,
+  seed = 123,
+  hcr = hcr,
+  save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
+)
+
+
+# Execute the MSE loop for one realization
+mod <- loop_through_fn(
+  om = om_with_data,
+  em_info = info,
+  random = random,
+  sel_em = sel,
+  M_em = M,
+  ecov_em = ecov_em,
+  NAA_re_em = NAA_re_em,
+  move_em = move_em,
+  em.opt = list(
+    separate.em = FALSE,
+    separate.em.type = 3,
+    do.move = TRUE,
+    est.move = TRUE
+  ),
+  update_catch_info = list(agg_catch_sigma = input_Ecov$data$agg_catch_sigma,
+                           catch_Neff = input_Ecov$data$catch_Neff),
+  update_index_info = list(agg_index_sigma = input_Ecov$data$agg_index_sigma,
+                           index_Neff = input_Ecov$data$index_Neff),
+  assess_years = assess.years,
+  assess_interval = assess.interval,
+  base_years = base.years,
+  year.use = length(base.years),
+  add.years = TRUE,
+  seed = 123,
+  hcr = hcr,
+  save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
+)
