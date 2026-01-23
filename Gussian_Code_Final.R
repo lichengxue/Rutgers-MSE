@@ -157,6 +157,10 @@ M <- list(
 )
 
 vals = exp(OMa$parList$log_NAA_sigma)[1,1,]
+
+# lower sigma for recruitment and NAA t0 0.005
+vals[] = 0.005
+  
 sigma_vals <- array(vals,
                     dim = c(n_stocks, n_regions, n_ages))
 
@@ -205,6 +209,7 @@ input_Ecov$data$Ecov_rec_T_col  <- 0L         # first Ecov column = North_BT
 temp_col <- input_Ecov$data$Ecov_rec_T_col + 1L
 temp_vec <- input_Ecov$data$Ecov_obs[, temp_col]
 
+# WE need to specify clearly
 input_Ecov$par$Topt_rec      <- 0.0          # peak at 0
 input_Ecov$par$log_width_rec <- log(1.0)     # width = 1
 n_stocks <- input_Ecov$data$n_stocks
@@ -264,6 +269,15 @@ input_Ecov <- update_input_catch_info(
 # 10. Force Ecov_re pattern: -2 to +2, 1989–2023
 # ----------------------------------
 Ecov_re <- OMa$parList$Ecov_re[,1, drop = FALSE]
+
+# Test Only Start Here
+n <- length(Ecov_re)
+
+Ecov_re[,] <- cos(seq(pi, 3*pi, length.out = n))
+Ecov_re
+plot(Ecov_re, type = "l")
+# End here
+
 ny      <- nrow(Ecov_re)
 
 yrs <- ecov$year      # 1959–2025, length 67
@@ -281,6 +295,7 @@ input_Ecov$data$do_simulate_Ecov_re <- 0
 if ("Ecov_re" %in% input_Ecov$random) {
   input_Ecov$random <- input_Ecov$random[input_Ecov$random != "Ecov_re"]
 }
+
 # ----------------------------------
 # 11. Build OM, remove Ecov_re from random, plug NAA rho
 # ----------------------------------
@@ -303,6 +318,9 @@ om_ecov <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = TRUE,
 saveRDS(om_ecov, file = "om_ecov.rds")
 
 om_with_data <- update_om_fn(om_ecov, seed = 123, random = random)
+
+om_with_data$input$data$agg_catch #simulated catch
+om_with_data$input$data$agg_indices #simulated index
 
 # ----------------------------------
 # 12. Diagnostics: show Gaussian T–R relationship
@@ -329,6 +347,7 @@ par(mfrow = c(1,1))
 # Optional: overlay theoretical Gaussian scalar (rescaled)
 Topt  <- om_with_data$parList$Topt_rec
 width <- exp(om_with_data$parList$log_width_rec)
+
 g_scalar <- exp(-0.5 * ((T_series - Topt) / width)^2)
 
 # Rescale for visualization
@@ -337,6 +356,7 @@ g_scaled <- max(rec1, na.rm = TRUE) * g_scalar / max(g_scalar, na.rm = TRUE)
 lines(yrs, g_scaled, col = "red", lwd = 2)
 legend("topright", legend = c("Recruitment (stock 1)", "Scaled Gaussian(T)"),
        col = c("black","red"), lty = 1, bty = "n")
+
 
 
 # Specify the Harvest Control Rule (HCR)
@@ -364,6 +384,7 @@ mod <- loop_through_fn(
   em_info = info,
   random = random,
   sel_em = sel,
+  eov_em = ecov_em,
   M_em = M,
   NAA_re_em = NAA_re_em,
   em.opt = list(
