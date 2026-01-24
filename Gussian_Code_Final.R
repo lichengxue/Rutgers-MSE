@@ -1,6 +1,9 @@
 # -----------------------------------------------------------------------------
 #     BSB MSE with Environmental Drivers - Gaussian Recruitment Test
 # -----------------------------------------------------------------------------
+# install.packages("remotes")
+# remotes::install_github("lichengxue/wham@Gussian_Rec")
+
 setwd("C:/Users/liche/Desktop/Rutgers-MSE")
 library(wham)
 library(whamMSE)
@@ -159,7 +162,7 @@ M <- list(
 vals = exp(OMa$parList$log_NAA_sigma)[1,1,]
 
 # lower sigma for recruitment and NAA t0 0.005
-vals[] = 0.005
+vals[] = 0.5
   
 sigma_vals <- array(vals,
                     dim = c(n_stocks, n_regions, n_ages))
@@ -214,6 +217,13 @@ input_Ecov$par$Topt_rec      <- 0.0          # peak at 0
 input_Ecov$par$log_width_rec <- log(1.0)     # width = 1
 n_stocks <- input_Ecov$data$n_stocks
 input_Ecov$par$beta_T_rec    <- rep(1, n_stocks)
+
+# ---- FIX map for Gaussian T-recruit params ----
+for(nm in c("Topt_rec","log_width_rec","beta_T_rec")) {
+  if(!is.null(input_Ecov$par[[nm]])) {
+    input_Ecov$map[[nm]] <- factor(rep(NA, length(input_Ecov$par[[nm]])))
+  }
+}
 
 # ----------------------------------
 # 9. Fix N1, catch & index info
@@ -294,6 +304,22 @@ input_Ecov$data$do_simulate_Ecov_re <- 0
 # Remove Ecov_re from the list of random effects TMB will estimate
 if ("Ecov_re" %in% input_Ecov$random) {
   input_Ecov$random <- input_Ecov$random[input_Ecov$random != "Ecov_re"]
+}
+
+par <- input_Ecov$par
+map <- input_Ecov$map
+
+cat("In par not in map:\n"); print(setdiff(names(par), names(map)))
+cat("In map not in par:\n"); print(setdiff(names(map), names(par)))
+
+shared <- intersect(names(par), names(map))
+bad_len <- shared[sapply(shared, function(nm) length(par[[nm]]) != length(map[[nm]]))]
+if(length(bad_len)) {
+  print(data.frame(
+    name = bad_len,
+    par_len = sapply(bad_len, function(nm) length(par[[nm]])),
+    map_len = sapply(bad_len, function(nm) length(map[[nm]]))
+  ))
 }
 
 # ----------------------------------
