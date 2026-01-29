@@ -247,7 +247,8 @@ the guassian function.
 - Previous issues with the 'Gaussian branch' appears to be resolved
 - Uninstalled and reinstalled the `wham` and `whamMSE` branches
 - Used the following commands
-  - `remove.packages("wham","whamMSE")`
+  - `remove.packages("wham")`
+  - `remove.packages("whamMSE")`
   - `remotes::install_github("lichengxue/wham@Gussian_Rec")`
   - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
 - Ran the original code for `bsb_om_em_mse.R`
@@ -266,4 +267,10 @@ the guassian function.
 - **IMPORTANT** - Wrote a single region version of the base model for future development
 
 **IMPORTANT** - <span style="color:red"> *ANY OPERATING MODEL THAT GIVES THIS ERROR SHOULD BE DISCARDED*</span>
+
+
+## 01/29/2026 log
+
+- Uninstalled and reinstalled `wham` and `whamMSE`
+- Pulled the latest `Gussian_Code_Final.R` code from Cheng's commit on the master branch
 
