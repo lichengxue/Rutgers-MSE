@@ -163,7 +163,7 @@ M <- list(
 
 vals = exp(OMa$parList$log_NAA_sigma)[1,1,]
 
-# lower sigma for recruitment and NAA t0 0.005
+# lower sigma for recruitment and NAA to 0.005
 vals[] = 0.5
   
 sigma_vals <- array(vals,
@@ -413,36 +413,6 @@ mod <- loop_through_fn(
   random = random,
   sel_em = sel,
   M_em = M,
-  NAA_re_em = NAA_re_em,
-  em.opt = list(
-    separate.em = FALSE,
-    separate.em.type = 3,
-    do.move = TRUE,
-    est.move = TRUE
-  ),
-  update_catch_info = list(agg_catch_sigma = input_Ecov$data$agg_catch_sigma,
-                           catch_Neff = input_Ecov$data$catch_Neff),
-  update_index_info = list(agg_index_sigma = input_Ecov$data$agg_index_sigma,
-                           index_Neff = input_Ecov$data$index_Neff),
-  assess_years = assess.years,
-  assess_interval = assess.interval,
-  base_years = base.years,
-  year.use = length(base.years),
-  add.years = TRUE,
-  seed = 123,
-  hcr = hcr,
-  save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
-)
-
-
-# Execute the MSE loop for one realization
-mod <- loop_through_fn(
-  om = om_with_data,
-  em_info = info,
-  random = random,
-  sel_em = sel,
-  M_em = M,
-  ecov_em = ecov_em,
   NAA_re_em = NAA_re_em,
   em.opt = list(
     separate.em = FALSE,
