@@ -21,6 +21,8 @@ asap <- read_asap3_dat("data/north.dat")
 # ----------------------------------
 north_bt <- read.csv("data/bsb_bt_temp_nmab_1959-2022.csv")
 
+# ecov is a list of multiple objects that is fed into the EM/OM later
+# It describes the ecovariate (environmental processes) that affect the demographic rates
 ecov <- list(label = c("North_BT"))
 
 # original means
@@ -29,7 +31,7 @@ ecov$mean <- cbind(north_bt[,"mean"])
 # center each column
 ecov$mean <- t(t(ecov$mean) - apply(ecov$mean, 2, mean))
 
-# extend to include 3 feedback years (2023–2025)
+# extend to include 3 feedback years (2023–2025). Putting in zeros for now
 ecov$mean <- rbind(ecov$mean, matrix(0, n_feedback_years, ncol(ecov$mean)))
 
 # for this test, force north BT deviations to 0 so all variation comes from Ecov_re
@@ -76,6 +78,7 @@ user_waa$waa[, 1:33, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]
 for (i in 34:36) {
   user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), 33, ]
 }
+
 user_waa$waa_pointer_fleets   <- 1:2
 user_waa$waa_pointer_indices  <- 3:4
 user_waa$waa_pointer_totcatch <- 5
@@ -94,6 +97,8 @@ catch_info <- list(
   use_catch_paa  = 1
 )
 
+# Which part of the year the surveys are conducted in 
+# Only using the first two values since this is a single region
 fracyr_indices <- c(0.4166667, 0.2500000, 0.4166667, 0.2500000)
 
 index_info <- list(
