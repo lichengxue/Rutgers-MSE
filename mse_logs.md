@@ -273,4 +273,15 @@ the guassian function.
 
 - Uninstalled and reinstalled `wham` and `whamMSE`
 - Pulled the latest `Gussian_Code_Final.R` code from Cheng's commit on the master branch
+- Renamed `Gussian_Code_Final.R` to 
+
+## 02/10/2026 log
+
+- Meeting with Cheng on 02/10/2026
+- Decided to do Sensitivity analysis on the MSE (Gaussian form)
+- Going to vary the following parameters
+  1. Sigma for recruitment and NAA - `vals[]` - 0.2 [Realistic for NE stocks], 0.5, 1 [Very high]
+  2. MSE gap - every 3 years, every 6 years
+  3. Width of gaussian relationship - `input_Ecov$par$log_width_rec` - 0.1 [Very stringent], 1, 5 [Very forgiving to non optimal temperatures]
+  4. Variability of temperature - For now, center around zero and increase stochasticity - 0.5, 1, 3
 
