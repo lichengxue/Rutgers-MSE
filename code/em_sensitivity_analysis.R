@@ -2,15 +2,38 @@
 #     BSB MSE with Environmental Drivers - Gaussian Recruitment Test
 # -----------------------------------------------------------------------------
 # install.packages("remotes")
-# remotes::install_github("lichengxue/wham@Gussian_Rec")
 
-# setwd("C:/Users/liche/Desktop/Rutgers-MSE")
+
 library(wham)
 library(whamMSE)
 library(dplyr)
 library(here)
 
 here::here()
+
+# NOTE: This code is set to run on a server as well as a personal computer
+
+#### RUN TIMES ####
+# Benchmarking run time and info for save files
+run_start_time <- Sys.time()
+
+#### RUN ENVIRONMENT ####
+# Options for run environment
+run_env_opts <- c("local","annotate2","amarel")
+run_env <- run_env_opts[1]
+
+#### MODEL RUN SETTINGS ####
+# Set iterations, a base random seed, and then generate seeds for each MSE run
+# Set a model name
+iterations <- 2
+base_random_seed <- 853
+set.seed(base_random_seed)
+mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000)))
+model_name <- "BSB Ecov"
+
+#### EXTERNAL FUNCTIONS ####
+# Source reusable functions from `functions/reusable_functions.R`
+source(here("functions","reusable_functions.R"))
 
 # ----------------------------------
 # Basic setup / read in objects
