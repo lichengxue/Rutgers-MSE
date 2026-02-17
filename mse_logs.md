@@ -295,7 +295,7 @@ the guassian function.
 - Moving all .R files into `scratch/` folder
 - All temporary development will be done there from now on
 - Current development is been done on the `Gussian_Code_Final_15yearMSE.R`. _Need to be renamed_
-- Sensitivity analysis in progress - Current working file [`code/em_sensitivity_analysis`](code/em_sensitivity_analysis)
+- Sensitivity analysis in progress - Current working file [`code/em_sensitivity_analysis.R`](code/em_sensitivity_analysis)
 
 ## 02/17/2026 log
 
@@ -304,4 +304,4 @@ the guassian function.
   - [`scratch/`](scratch/)(for developmental/tutorial/past .R files that are currently tracked)
   - [`code/`](code/)(for currently developing .R files)
   - [`git_untracked/`] - Only present on the local machine
-
+- Moved `FAA.RDS` and `WAA.RDS` to the [`data/`](data/) folder
