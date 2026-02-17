@@ -285,3 +285,23 @@ the guassian function.
   3. Width of gaussian relationship - `input_Ecov$par$log_width_rec` - 0.1 [Very stringent], 1, 5 [Very forgiving to non optimal temperatures]
   4. Variability of temperature - For now, center around zero and increase stochasticity - 0.5, 1, 3
 
+- Double check the black sea bass report for the magnitude of the recruitment, catch, and SSB
+- This is in order to match up our estimates in scale to reality
+
+
+## 02/16/2026 log
+
+- Cleaning up the .git project folder.
+- Moving all .R files into `scratch/` folder
+- All temporary development will be done there from now on
+- Current development is been done on the `Gussian_Code_Final_15yearMSE.R`. _Need to be renamed_
+- Sensitivity analysis in progress - Current working file [`code/em_sensitivity_analysis`](code/em_sensitivity_analysis)
+
+## 02/17/2026 log
+
+- Done cleaning up the .git project folder
+- Now there are three new folders including 
+  - [`scratch/`](scratch/)(for developmental/tutorial/past .R files that are currently tracked)
+  - [`code/`](code/)(for currently developing .R files)
+  - [`git_untracked/`] - Only present on the local machine
+
