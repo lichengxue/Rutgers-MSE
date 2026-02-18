@@ -25,11 +25,31 @@ run_env <- run_env_opts[1]
 #### MODEL RUN SETTINGS ####
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
-iterations <- 2
+iterations <- 10
 base_random_seed <- 853
 set.seed(base_random_seed)
 mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000)))
 model_name <- "BSB Ecov"
+
+#### SENSITIVITY ANALYSIS SETTINGS ####
+# We will be looking at model variation from the following
+# Process error for recruitment and NAA - vals - 0.2, 0.5, 1
+# MSE gaps - 3 years, 6 years
+# Width of gaussian relationship - `input_Ecov$par$log_width_rec` - 0.1 [Very stringent], 1, 5 [Very forgiving to non optimal temperatures]
+# Variability of temperature - Mean centered around zero -  increasing stochasticity - 0.5, 1, 3
+
+proc_error_v <- c(0.2, 0.5, 1)
+mse_gaps_v <- c(3,6)
+gauss_width_v <- c(0.1, 1, 5)
+temp_stoch_v <- c(0.5, 1, 3)
+
+# Use `crossing` function from tidyr to create a dataframe of all the settings in the
+# sensitivity analysis
+sens_analysis_settings <- tidyr::crossing(proc_error= proc_error_v, 
+                                          mse_gap = mse_gaps_v, 
+                                          gauss_width=gauss_width_v, 
+                                          temp_stoch=temp_stoch_v)
+
 
 #### EXTERNAL FUNCTIONS ####
 # Source reusable functions from `functions/reusable_functions.R`
@@ -421,7 +441,7 @@ terminal.year <- tail(base.years, 1)
 last.year <- 2024+12
 assess.years <- seq(terminal.year, last.year - assess.interval, by = assess.interval)
 
-# Remember to use this config for EM NAAre
+# Remember to use this config for EM NAA re
 NAA_re_em = NAA_re
 NAA_re_em$N1_model[] = "equilibrium"
 
@@ -520,6 +540,8 @@ mod3 <- loop_through_fn(
   save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
 )
 
+
+# Abundance from the operating models
 plot(mod1$om$rep$SSB, type = "l", col = "red")
 lines(mod2$om$rep$SSB, type = "l", col = "blue")
 
@@ -538,14 +560,14 @@ mod1$em_full[[1]]$rep$SSB - mod2$em_full[[1]]$rep$SSB
 mod2$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars
 mod2$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
 
-plot(mod$om$rep$NAA[,,,1], type = "l")
-lines(mod$em_full[[1]]$rep$NAA[,,,1], col = "red")
+plot(mod1$om$rep$NAA[,,,1], type = "l")
+lines(mod1$em_full[[1]]$rep$NAA[,,,1], col = "red")
 
-plot(mod$om$rep$Fbar[,1], type = "l")
-lines(mod$em_full[[1]]$rep$Fbar[,1], col = "red")
+plot(mod1$om$rep$Fbar[,1], type = "l")
+lines(mod1$em_full[[1]]$rep$Fbar[,1], col = "red")
 
-plot(mod$om$rep$pred_catch[,1], type = "l")
-lines(mod$em_full[[1]]$rep$pred_catch[,1], col = "red")
+plot(mod1$om$rep$pred_catch[,1], type = "l")
+lines(mod1$em_full[[1]]$rep$pred_catch[,1], col = "red")
 
 mod1$em_input[[1]]$par$Ecov_beta_R
 mod2$em_input[[1]]$par$Ecov_beta_R
@@ -563,7 +585,7 @@ mod2$em_full[[1]]$sdrep
 mod1$em_full[[1]]$parList$Ecov_beta_R
 mod2$em_full[[1]]$parList$Ecov_beta_R
 
-mod$om$parList$trans_NAA_rho[,,1]
+mod1$om$parList$trans_NAA_rho[,,1]
 mod1$em_full[[1]]$parList$trans_NAA_rho
 mod2$em_full[[1]]$parList$trans_NAA_rho
 mod3$em_full[[1]]$parList$trans_NAA_rho
@@ -576,4 +598,4 @@ mod3$em_full[[1]]$input$data$Ecov_how_R
 
 mod1$em_full[[1]]$rep$nll
 mod2$em_full[[1]]$rep$nll
-mod1$em_full[[1]]$rep$nll
+mod3$em_full[[1]]$rep$nll
