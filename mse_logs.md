@@ -310,5 +310,6 @@ the guassian function.
 
 - Development switched to the `dev` branch
 - Changing [`code/em_sensitivity_analysis.R`](code/sensitivity_analysis.R) to be more flexible in the future
+- Revert back to the following commit if something bad happens or break: [d66ff06](https://github.com/lichengxue/Rutgers-MSE/commit/d66ff0615ae8b0df63daf3e93f447c2cd3ed4067)
 
 
