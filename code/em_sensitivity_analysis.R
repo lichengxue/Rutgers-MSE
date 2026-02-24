@@ -58,6 +58,10 @@ source(here("functions","reusable_functions.R"))
 # ----------------------------------
 # Basic setup / read in objects
 # ----------------------------------
+
+# NOTE: OM model ends in 2021 and EM starts in 2022
+# But the bottom temperature dataset goes until 2022
+
 n_feedback_years <- 15
 
 OMa  <- readRDS("models/OM_base.RDS")
@@ -449,7 +453,8 @@ NAA_re_em$N1_model[] = "equilibrium"
 ecov_em <- ecov
 ecov_em$logsigma <- 'est_1'
 
-
+# Create a list of model objects
+mod_list <- list(mod_names=c("Model 1", "Model 2", "Model 3"))
 # Execute the MSE loop for one realization
 mod1 <- loop_through_fn(
   om = om_with_data,
@@ -540,6 +545,9 @@ mod3 <- loop_through_fn(
   save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
 )
 
+#### EXPERIMENTAL MINI CHUNK HERE ####
+# Get models into a list
+mod_list$models <- c(mod1, mod2, mod3)
 
 #### OPERATING MODEL - ABUNDANCE[SSB] ####
 plot(mod1$om$rep$SSB, type = "l", col = "red")
