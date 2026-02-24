@@ -541,31 +541,41 @@ mod3 <- loop_through_fn(
 )
 
 
-# Abundance from the operating models
+#### OPERATING MODEL - ABUNDANCE[SSB] ####
 plot(mod1$om$rep$SSB, type = "l", col = "red")
 lines(mod2$om$rep$SSB, type = "l", col = "blue")
 
+#### PREDICATED CATCH ####
+# Fleet 1
 plot(mod1$om$rep$pred_catch[,1], type = "l", col = "red")
 lines(mod2$om$rep$pred_catch[,1], type = "l", col = "blue")
 
+# Fleet 2
 plot(mod1$om$rep$pred_catch[,2], type = "l", col = "red")
 lines(mod2$om$rep$pred_catch[,2], type = "l", col = "blue")
 
+#### ESTIMATION MODEL - ABUNDANCE[SSB] ####
 lines(mod1$em_full[[1]]$rep$SSB, col = "red")
 lines(mod2$em_full[[1]]$rep$SSB, col = "blue")
 lines(mod3$em_full[[1]]$rep$SSB, col = "purple")
 
+
+#### DIFFERENCE BETWEEN ESTIMATION MODELS ####
 mod1$em_full[[1]]$rep$SSB - mod2$em_full[[1]]$rep$SSB
 
 mod2$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars
 mod2$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
 
+# NAA - Age class 1
+# EM vs. OM
 plot(mod1$om$rep$NAA[,,,1], type = "l")
 lines(mod1$em_full[[1]]$rep$NAA[,,,1], col = "red")
 
+# Fishing pressure
 plot(mod1$om$rep$Fbar[,1], type = "l")
 lines(mod1$em_full[[1]]$rep$Fbar[,1], col = "red")
 
+# Predicted vs. estimated catch
 plot(mod1$om$rep$pred_catch[,1], type = "l")
 lines(mod1$em_full[[1]]$rep$pred_catch[,1], col = "red")
 
@@ -578,24 +588,24 @@ mod2$em_input[[1]]$par$Ecov_process_pars
 mod1$em_full[[1]]$parList$mean_rec_pars - mod2$em_full[[1]]$parList$mean_rec_pars
 mod1$em_full[[1]]$parList$logit_q - mod2$em_full[[1]]$parList$logit_q
 
-
 mod1$em_full[[1]]$sdrep
 mod2$em_full[[1]]$sdrep
 
 mod1$em_full[[1]]$parList$Ecov_beta_R
 mod2$em_full[[1]]$parList$Ecov_beta_R
 
+# Population correlation coefficient
 mod1$om$parList$trans_NAA_rho[,,1]
 mod1$em_full[[1]]$parList$trans_NAA_rho
 mod2$em_full[[1]]$parList$trans_NAA_rho
 mod3$em_full[[1]]$parList$trans_NAA_rho
 
-
+# Is recruitment connected to ecovariate?
 mod1$em_full[[1]]$input$data$Ecov_how_R
 mod2$em_full[[1]]$input$data$Ecov_how_R
 mod3$em_full[[1]]$input$data$Ecov_how_R
 
-
+# EM - Negative log likelihood 
 mod1$em_full[[1]]$rep$nll
 mod2$em_full[[1]]$rep$nll
 mod3$em_full[[1]]$rep$nll
