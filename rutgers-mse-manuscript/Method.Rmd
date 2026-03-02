@@ -1,6 +1,6 @@
 ---
 title: "BSB MSE Study"
-author: "Chengxue Li"
+author: "RMWJ Bandara"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
   pdf_document:
