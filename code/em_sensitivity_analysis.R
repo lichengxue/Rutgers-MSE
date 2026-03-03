@@ -54,6 +54,9 @@ sens_analysis_settings <- tidyr::crossing(proc_error= proc_error_v,
 
 sens_analysis_settings <- sens_analysis_settings %>% mutate(nid=row_number(), .before=1)
 
+# NOTE: ONLY USE TWO ROWS BECAUSE THIS IS A TEST RUN
+sens_analysis_settings <- sens_analysis_settings %>% head(n=2)
+
 #### EXTERNAL FUNCTIONS ####
 # Source reusable functions from `functions/reusable_functions.R`
 source(here("functions","reusable_functions.R"))
@@ -62,9 +65,14 @@ source(here("functions","reusable_functions.R"))
 # WARNING: THIS CAN TAKE A LOT OF TIME
 DO_ANALYSIS = TRUE
 if(DO_ANALYSIS){
-  for(i in 1:2) {
+  for(i in 1:nrow(sens_analysis_settings)) {
     # Get the settings for this sensitivity run
     row <- sens_analysis_settings[i,]
+    proc_error <- row$proc_error
+    mse_gap <- row$mse_gap
+    gauss_width <- row$gauss_width
+    run_id <- row$nid
+    print(paste("Running sensitivity analysis Run:",run_id, sep=" "))
     
     # NOTE: OM model ends in 2021 and EM starts in 2022
     # But the bottom temperature dataset goes until 2022
@@ -205,7 +213,7 @@ if(DO_ANALYSIS){
     vals = exp(OMa$parList$log_NAA_sigma)[1,1,]
     
     ##### SENSITIVITY ANALYSIS POINT 1 ####
-    vals[] = row$proc_error
+    vals[] = proc_error
     
     sigma_vals <- array(vals,
                         dim = c(n_stocks, n_regions, n_ages))
@@ -254,7 +262,8 @@ if(DO_ANALYSIS){
     
     # WE need to specify clearly
     input_Ecov$par$Topt_rec      <- 0.0          # peak at 0
-    input_Ecov$par$log_width_rec <- log(row$gauss_width)     # width = 1
+    #### SENSITIVITY ANALYSIS POINT 2 ####
+    input_Ecov$par$log_width_rec <- log(gauss_width)     # width = 1
     n_stocks <- input_Ecov$data$n_stocks
     input_Ecov$par$beta_T_rec    <- rep(1, n_stocks)
     
@@ -424,8 +433,8 @@ if(DO_ANALYSIS){
     hcr$hcr.type <- 1 # FXSPR - Fishing pressure to keep the SPR at a certain percentage
     hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
     
-    #### SENSITIVITY ANALYSIS POINT 2 ####
-    assess.interval <- row$mse_gap # Assessments occur every 3 years
+    #### SENSITIVITY ANALYSIS POINT 3 ####
+    assess.interval <- mse_gap # Assessments occur every 3 years
     base.years <- year_start:year_end
     terminal.year <- tail(base.years, 1)
     last.year <- 2024+12
@@ -438,9 +447,6 @@ if(DO_ANALYSIS){
     # You can use 'est_1' to let EM estimate obs error for Ecov
     ecov_em <- ecov
     ecov_em$logsigma <- 'est_1'
-    
-    # Create a list of model objects
-    # mod_list <- list(mod_names=c("Model 1", "Model 2", "Model 3"))
     
     #### 13. SETUP EMs & GATHER THEIR RESULTS ####
     # Execute the MSE loop for one realization
@@ -538,27 +544,104 @@ if(DO_ANALYSIS){
     
     #### SAVE MODEL ####
     # FILE/FOLDER STRUCTURE FOR MODEL SAVING: models/sensitivity_analysis
-    SAVE_MODEL <- FALSE
+    SAVE_MODEL <- TRUE
     if(SAVE_MODEL){
       # Create a folder for saving all the data and run information
       # We will use the date+time from the start time of the code
       # Format run_start_time as a posixDate object
       folder_name <- format(run_start_time, "%Y-%m-%d_%H-%M-%S")
-      folder_path <- here("models","model_runs",folder_name)
+      folder_path <- here("models","sensitivity_analysis",folder_name,"models")
       # Create a folder. Suppress warnings and allow recursive folders to be created
       dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
-      for(iter in seq(iterations)){
-        saveRDS(model_list[iter], here(folder_path,paste("model_run_",iter,".RDS",sep="")))
-      }
-      print("Models saved!")
+      saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"_mod_1",".RDS",sep="")))
+      saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"_mod_2",".RDS",sep="")))
+      saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"_mod_3",".RDS",sep="")))
+      # for(iter in seq(iterations)){
+      #   saveRDS(model_list[iter], here(folder_path,paste("model_run_",iter,".RDS",sep="")))
+      # }
+      print(paste("Models saved for Run",run_id,sep=" "))
     }
+    
+    #### SAVE PLOTS ####
+    if(SAVE_MODEL){
+      folder_path <- here("models","sensitivity_analysis",folder_name,"plots")
+      dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
+      ##### OPERATING MODEL - ABUNDANCE[SSB] #####
+      plot(mod1$om$rep$SSB, type = "l", col = "red")
+      lines(mod2$om$rep$SSB, type = "l", col = "blue")
+      
+      # Getting these into a nice tidyverse format
+      mod1_om_ssb <- mod1$om$rep$SSB
+      mod1_om_ssb <- cbind(mod1_om_ssb,model='Model 1')
+      mod1_om_ssb <- cbind(ID = as.integer(1:nrow(mod1_om_ssb)), mod1_om_ssb)
+      mod2_om_ssb <- mod2$om$rep$SSB
+      mod2_om_ssb <- cbind(mod2_om_ssb,model='Model 2')
+      mod2_om_ssb <- cbind(ID = as.integer(1:nrow(mod2_om_ssb)), mod2_om_ssb)
+      mod3_om_ssb <- mod3$om$rep$SSB
+      mod3_om_ssb <- cbind(mod3_om_ssb,model='Model 3')
+      mod3_om_ssb <- cbind(ID = as.integer(1:nrow(mod3_om_ssb)), mod3_om_ssb)
+      
+      
+      mod_om_ssb <- rbind(mod1_om_ssb, mod2_om_ssb, mod3_om_ssb)
+      mod_om_ssb_df <- tibble::as_tibble(mod_om_ssb)
+      mod_om_ssb_df <- mod_om_ssb_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
+      mod_om_ssb_df <- mod_om_ssb_df %>% rename(SSB=V2) %>% mutate(SSB=as.numeric(SSB))
+      
+      # Plot via ggplot
+      om_ssb_plot_1 <- ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model", title=paste("SSB in OM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      # Plot via ggplot
+      om_ssb_plot_2 <- ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + 
+        labs(color="Model") + 
+        theme_bw()
+      
+      #### PREDICTED CATCH - YET TO BE CORRECTLY FIXED!! ####
+      mod1_om_pred_catch <- mod1$om$rep$pred_catch[,1]
+      mod1_om_ssb <- cbind(mod1_om_ssb,model='Model 1')
+      mod1_om_ssb <- cbind(ID = as.integer(1:nrow(mod1_om_ssb)), mod1_om_ssb)
+      mod2_om_ssb <- mod2$om$rep$SSB
+      mod2_om_ssb <- cbind(mod2_om_ssb,model='Model 2')
+      mod2_om_ssb <- cbind(ID = as.integer(1:nrow(mod2_om_ssb)), mod2_om_ssb)
+      mod3_om_ssb <- mod3$om$rep$SSB
+      mod3_om_ssb <- cbind(mod3_om_ssb,model='Model 3')
+      mod3_om_ssb <- cbind(ID = as.integer(1:nrow(mod3_om_ssb)), mod3_om_ssb)
+      # Fleet 1
+      plot(mod1$om$rep$pred_catch[,1], type = "l", col = "red")
+      lines(mod2$om$rep$pred_catch[,1], type = "l", col = "blue")
+      
+      # Fleet 2
+      plot(mod1$om$rep$pred_catch[,2], type = "l", col = "red")
+      lines(mod2$om$rep$pred_catch[,2], type = "l", col = "blue")
+      # Gather all the plots
+      
+     test_plots_list <- list(om_ssb_plot_1, om_ssb_plot_2)
+      
+      # Arrange and save the plots to a multi-page PDF (4 plots per page: 2 rows, 2 columns)
+      # pdf(here(folder_path,paste("om_ssb_plot_run_",run_id,".pdf",sep="")), width = 12, height = 8)
+     # pdf_path <- here(folder_path, "run_id.pdf")
+     #  pdf(pdf_path, width=12, height=8)
+     #  marrangeGrob(test_plots_list, nrow = 2, ncol = 1)
+     #  dev.off()
+     #  
+      multi.page <- ggpubr::ggarrange(plotlist = test_plots_list, nrow = 2, ncol = 1) 
+      ggpubr::ggexport(multi.page, filename = pdf_path <- here(folder_path, paste("sens_run_",run_id,"_plots.pdf",sep="")))
+    } # PLOTTING IF ENDS
+    ##### SAVE MODEL RUN SETTINGS  #####
   } # FOR LOOP ENDS
 } # IF ENDS
 
 
 #### EXPERIMENTAL MINI CHUNK HERE ####
 # Get models into a list
-mod_list$models <- c(mod1, mod2, mod3)
+# Create a list of model objects
+mod_list <- list(mod_names=c("Model 1", "Model 2", "Model 3"))
+mod_list$models <- list(mod1, mod2, mod3)
 
 #### OPERATING MODEL - ABUNDANCE[SSB] ####
 plot(mod1$om$rep$SSB, type = "l", col = "red")
@@ -566,23 +649,37 @@ lines(mod2$om$rep$SSB, type = "l", col = "blue")
 
 # Getting these into a nice tidyverse format
 mod1_om_ssb <- mod1$om$rep$SSB
-mod1_om_ssb <- cbind(mod1_om_ssb,model='Model 1');
+mod1_om_ssb <- cbind(mod1_om_ssb,model='Model 1')
 mod1_om_ssb <- cbind(ID = as.integer(1:nrow(mod1_om_ssb)), mod1_om_ssb)
 mod2_om_ssb <- mod2$om$rep$SSB
-mod2_om_ssb <- cbind(mod2_om_ssb,model='Model 2');
+mod2_om_ssb <- cbind(mod2_om_ssb,model='Model 2')
 mod2_om_ssb <- cbind(ID = as.integer(1:nrow(mod2_om_ssb)), mod2_om_ssb)
+mod3_om_ssb <- mod3$om$rep$SSB
+mod3_om_ssb <- cbind(mod3_om_ssb,model='Model 3')
+mod3_om_ssb <- cbind(ID = as.integer(1:nrow(mod3_om_ssb)), mod3_om_ssb)
 
-mod_om_ssb <- rbind(mod1_om_ssb, mod2_om_ssb)
+
+mod_om_ssb <- rbind(mod1_om_ssb, mod2_om_ssb, mod3_om_ssb)
 mod_om_ssb_df <- tibble::as_tibble(mod_om_ssb)
 mod_om_ssb_df <- mod_om_ssb_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
 mod_om_ssb_df <- mod_om_ssb_df %>% rename(SSB=V2) %>% mutate(SSB=as.numeric(SSB))
 
 # Plot via ggplot
 ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) + 
-  geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + theme_bw()
+  geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+  scale_x_continuous(breaks=seq(1985,2040,5)) + 
+  labs(color="Model") + 
+  theme_bw() + 
+  theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+
+# Plot via ggplot
+ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) + 
+  geom_line(alpha=0.5, linewidth=1) + 
+  labs(color="Model") + 
+  theme_bw()
 
 
-#### PREDICATED CATCH ####
+#### PREDICTED CATCH ####
 # Fleet 1
 plot(mod1$om$rep$pred_catch[,1], type = "l", col = "red")
 lines(mod2$om$rep$pred_catch[,1], type = "l", col = "blue")
@@ -653,8 +750,19 @@ plots_list <- lapply(1:10, function(i) {
     ggtitle(paste("Plot", i))
 })
 
+# How to add plots to an existing list
+sample_plot <- ggplot(mtcars, aes(wt, mpg)) +
+  geom_point(color="red") +
+  ggtitle(paste("Plot", i))
+sample_plot_2 <- ggplot(mtcars, aes(wt, mpg)) +
+  geom_point(color="yellow") +
+  ggtitle(paste("Plot", i))
+
+plots_list_x <- list(sample_plot, sample_plot_2)
+plots_list_x <- append(plots_list_x, list(sample_plot))
+
 # Arrange and save the plots to a multi-page PDF (4 plots per page: 2 rows, 2 columns)
-pdf(here("plots","multi_page_gridExtra.pdf"), width = 12, height = 8)
-marrangeGrob(plots_list, nrow = 2, ncol = 2)
+pdf(here("plots","multi_page_gridExtra2.pdf"), width = 12, height = 8)
+marrangeGrob(plots_list_x, nrow = 2, ncol = 2)
 dev.off()
 
