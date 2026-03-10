@@ -1,8 +1,17 @@
 # -----------------------------------------------------------------------------
-#     BSB MSE with Environmental Drivers - Gaussian Recruitment Test
+#
+#                 Management Strategy Evaluation (MSE)
+#           Black Sea Bass (BSB) with Environmental Drivers
+#                       SENSITIVITY ANALYSIS
+#
+#
+# Author(s): RMWJ Bandara, Chengxue Li
+# Date: 2026/03/02
+# Runtime environment: MacOS Sequoia 15.5 on M-chip Macbook Pro, R version 4.4.1
+#
+#
+#
 # -----------------------------------------------------------------------------
-# install.packages("remotes")
-
 
 library(wham)
 library(whamMSE)
@@ -10,6 +19,8 @@ library(dplyr)
 library(here)
 library(ggplot2)
 library(gridExtra)
+library(beepr)
+library(readr)
 
 here::here()
 
@@ -54,8 +65,8 @@ sens_analysis_settings <- tidyr::crossing(proc_error= proc_error_v,
 
 sens_analysis_settings <- sens_analysis_settings %>% mutate(nid=row_number(), .before=1)
 
-# NOTE: ONLY USE TWO ROWS BECAUSE THIS IS A TEST RUN
-sens_analysis_settings <- sens_analysis_settings %>% head(n=2)
+# NOTE: ONLY USE FIVE ROWS BECAUSE THIS IS A TEST RUN
+sens_analysis_settings <- sens_analysis_settings %>% head(n=6)
 
 #### EXTERNAL FUNCTIONS ####
 # Source reusable functions from `functions/reusable_functions.R`
@@ -66,6 +77,7 @@ source(here("functions","reusable_functions.R"))
 DO_ANALYSIS = TRUE
 if(DO_ANALYSIS){
   for(i in 1:nrow(sens_analysis_settings)) {
+    # Envelope in a tryCatch so that we just skip over stuff that doesn't work
     # Get the settings for this sensitivity run
     row <- sens_analysis_settings[i,]
     proc_error <- row$proc_error
@@ -601,41 +613,183 @@ if(DO_ANALYSIS){
         labs(color="Model") + 
         theme_bw()
       
-      #### PREDICTED CATCH - YET TO BE CORRECTLY FIXED!! ####
-      mod1_om_pred_catch <- mod1$om$rep$pred_catch[,1]
-      mod1_om_ssb <- cbind(mod1_om_ssb,model='Model 1')
-      mod1_om_ssb <- cbind(ID = as.integer(1:nrow(mod1_om_ssb)), mod1_om_ssb)
-      mod2_om_ssb <- mod2$om$rep$SSB
-      mod2_om_ssb <- cbind(mod2_om_ssb,model='Model 2')
-      mod2_om_ssb <- cbind(ID = as.integer(1:nrow(mod2_om_ssb)), mod2_om_ssb)
-      mod3_om_ssb <- mod3$om$rep$SSB
-      mod3_om_ssb <- cbind(mod3_om_ssb,model='Model 3')
-      mod3_om_ssb <- cbind(ID = as.integer(1:nrow(mod3_om_ssb)), mod3_om_ssb)
-      # Fleet 1
-      plot(mod1$om$rep$pred_catch[,1], type = "l", col = "red")
-      lines(mod2$om$rep$pred_catch[,1], type = "l", col = "blue")
+      #### OPERATING MODEL - PREDICTED CATCH ####
+      mod1_om_pred_catch <- data.frame(PRED_CATCH=mod1$om$rep$pred_catch[,1])
+      mod1_om_pred_catch <- cbind(mod1_om_pred_catch,model='Model 1')
+      mod1_om_pred_catch <- cbind(ID = as.integer(1:nrow(mod1_om_pred_catch)), mod1_om_pred_catch)
+      mod2_om_pred_catch <- data.frame(PRED_CATCH=mod2$om$rep$pred_catch[,1])
+      mod2_om_pred_catch <- cbind(mod2_om_pred_catch,model='Model 2')
+      mod2_om_pred_catch <- cbind(ID = as.integer(1:nrow(mod2_om_pred_catch)), mod2_om_pred_catch)
+      mod3_om_pred_catch <- data.frame(PRED_CATCH=mod3$om$rep$pred_catch[,1])
+      mod3_om_pred_catch <- cbind(mod3_om_pred_catch,model='Model 3')
+      mod3_om_pred_catch <- cbind(ID = as.integer(1:nrow(mod3_om_pred_catch)), mod3_om_pred_catch)
       
-      # Fleet 2
-      plot(mod1$om$rep$pred_catch[,2], type = "l", col = "red")
-      lines(mod2$om$rep$pred_catch[,2], type = "l", col = "blue")
-      # Gather all the plots
+      mod_om_pred_catch <- rbind(mod1_om_pred_catch, mod2_om_pred_catch, mod3_om_pred_catch)
+      mod_om_pred_catch_df <- tibble::as_tibble(mod_om_pred_catch)
+      mod_om_pred_catch_df <- mod_om_pred_catch_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
       
-     test_plots_list <- list(om_ssb_plot_1, om_ssb_plot_2)
+      # Plot via ggplot
+      om_pred_catch_plot_1 <- ggplot(mod_om_pred_catch_df, aes(year, PRED_CATCH, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model", title=paste("PRED. CATCH in OM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      # Plot via ggplot
+      om_pred_catch_plot_2 <- ggplot(mod_om_pred_catch_df, aes(year, PRED_CATCH, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + 
+        labs(color="Model") + 
+        theme_bw()
+      
+      #### ESTIMATION MODEL - ABUNDANCE [SSB] ####
+      # lines(mod1$em_full[[1]]$rep$SSB, col = "red")
+      mod1_em_ssb <- data.frame(SSB=mod1$em_full[[1]]$rep$SSB)
+      mod1_em_ssb <- cbind(mod1_em_ssb,model='Model 1')
+      mod1_em_ssb <- cbind(ID = as.integer(1:nrow(mod1_em_ssb)), mod1_em_ssb)
+      mod2_em_ssb <- data.frame(SSB=mod2$em_full[[1]]$rep$SSB)
+      mod2_em_ssb <- cbind(mod2_em_ssb,model='Model 2')
+      mod2_em_ssb <- cbind(ID = as.integer(1:nrow(mod2_em_ssb)), mod2_em_ssb)
+      mod3_em_ssb <- data.frame(SSB=mod3$em_full[[1]]$rep$SSB)
+      mod3_em_ssb <- cbind(mod3_em_ssb,model='Model 3')
+      mod3_em_ssb <- cbind(ID = as.integer(1:nrow(mod3_em_ssb)), mod3_em_ssb)
+      
+      
+      mod_em_ssb <- rbind(mod1_em_ssb, mod2_em_ssb, mod3_em_ssb)
+      mod_em_ssb_df <- tibble::as_tibble(mod_em_ssb)
+      mod_em_ssb_df <- mod_em_ssb_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
+      
+      # Plot via ggplot
+      em_ssb_plot_1 <- ggplot(mod_em_ssb_df, aes(year, SSB, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model", title=paste("SSB in EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      # Plot via ggplot
+      em_ssb_plot_2 <- ggplot(mod_em_ssb_df, aes(year, SSB, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + 
+        labs(color="Model") + 
+        theme_bw()
+      
+      #### NAA - Age class 1 EM vs. OM  ####
+      # NAA - Age class 1
+      # EM vs. OM
+      mod1_om_NAA <- data.frame(NAA_1=mod1$om$rep$NAA[,,,1])
+      mod1_om_NAA <- cbind(mod1_om_NAA,model='Model 1 - OM')
+      mod1_om_NAA <- cbind(ID = as.integer(1:nrow(mod1_om_NAA)), mod1_om_NAA)
+      mod1_em_NAA <- data.frame(NAA_1=mod1$em_full[[1]]$rep$NAA[,,,1])
+      mod1_em_NAA <- cbind(mod1_em_NAA,model='Model 1 - EM')
+      mod1_em_NAA <- cbind(ID = as.integer(1:nrow(mod1_em_NAA)), mod1_em_NAA)
+      mod2_em_NAA <- data.frame(NAA_1=mod2$em_full[[1]]$rep$NAA[,,,1])
+      mod2_em_NAA <- cbind(mod2_em_NAA,model='Model 2 - EM')
+      mod2_em_NAA <- cbind(ID = as.integer(1:nrow(mod2_em_NAA)), mod2_em_NAA)
+      mod3_em_NAA <- data.frame(NAA_1=mod3$em_full[[1]]$rep$NAA[,,,1])
+      mod3_em_NAA <- cbind(mod3_em_NAA,model='Model 3 - EM')
+      mod3_em_NAA <- cbind(ID = as.integer(1:nrow(mod3_em_NAA)), mod3_em_NAA)
+      
+      mod_NAA <- rbind(mod1_om_NAA, mod1_em_NAA, mod2_em_NAA, mod3_em_NAA)
+      mod_NAA_df <- tibble::as_tibble(mod_NAA)
+      mod_NAA_df <- mod_NAA_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
+      
+      # Plot via ggplot
+      mod_NAA_plot_1 <- ggplot(mod_NAA_df, aes(year, NAA_1, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model", title=paste("NAA 1 in OM & EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      # Plot via ggplot
+      mod_NAA_plot_2 <- ggplot(mod_NAA_df, aes(year, NAA_1, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model") + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      #### FISHING PRESSURE ####
+      mod1_om_fbar <- data.frame(fbar=mod1$om$rep$Fbar[,1])
+      mod1_om_fbar <- cbind(mod1_om_fbar,model='Model 1 - OM')
+      mod1_om_fbar <- cbind(ID = as.integer(1:nrow(mod1_om_fbar)), mod1_om_fbar)
+      mod1_em_fbar <- data.frame(fbar=mod1$em_full[[1]]$rep$Fbar[,1])
+      mod1_em_fbar <- cbind(mod1_em_fbar,model='Model 1 - EM')
+      mod1_em_fbar <- cbind(ID = as.integer(1:nrow(mod1_em_fbar)), mod1_em_fbar)
+      mod2_em_fbar <- data.frame(fbar=mod2$em_full[[1]]$rep$Fbar[,1])
+      mod2_em_fbar <- cbind(mod2_em_fbar,model='Model 2 - EM')
+      mod2_em_fbar <- cbind(ID = as.integer(1:nrow(mod2_em_fbar)), mod2_em_fbar)
+      mod3_em_fbar <- data.frame(fbar=mod3$em_full[[1]]$rep$Fbar[,1])
+      mod3_em_fbar <- cbind(mod3_em_fbar,model='Model 3 - EM')
+      mod3_em_fbar <- cbind(ID = as.integer(1:nrow(mod3_em_fbar)), mod3_em_fbar)
+      
+      mod_fbar <- rbind(mod1_om_fbar, mod1_em_fbar, mod2_em_fbar, mod3_em_fbar)
+      mod_fbar_df <- tibble::as_tibble(mod_fbar)
+      mod_fbar_df <- mod_fbar_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
+      
+      # Plot via ggplot
+      mod_fbar_plot_1 <- ggplot(mod_fbar_df, aes(year, fbar, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model", title=paste("Fbar in OM & EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      # Plot via ggplot
+      mod_fbar_plot_2 <- ggplot(mod_fbar_df, aes(year, fbar, color=as.factor(model))) + 
+        geom_line(alpha=0.5, linewidth=1) + 
+        scale_x_continuous(breaks=seq(1985,2040,5)) + 
+        labs(color="Model") + 
+        theme_bw() + 
+        theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+      
+      #### PARAMETER ESTIMATES AND DIFFERENCES - STILL TO BE DONE! ####
       
       # Arrange and save the plots to a multi-page PDF (4 plots per page: 2 rows, 2 columns)
       # pdf(here(folder_path,paste("om_ssb_plot_run_",run_id,".pdf",sep="")), width = 12, height = 8)
-     # pdf_path <- here(folder_path, "run_id.pdf")
-     #  pdf(pdf_path, width=12, height=8)
-     #  marrangeGrob(test_plots_list, nrow = 2, ncol = 1)
-     #  dev.off()
-     #  
-      multi.page <- ggpubr::ggarrange(plotlist = test_plots_list, nrow = 2, ncol = 1) 
+      # pdf_path <- here(folder_path, "run_id.pdf")
+      #  pdf(pdf_path, width=12, height=8)
+      #  marrangeGrob(test_plots_list, nrow = 2, ncol = 1)
+      #  dev.off()
+      #  
+      # Append the 
+      diagnostics_plots <- list(om_ssb_plot_1, om_ssb_plot_2, 
+                                om_pred_catch_plot_1, om_pred_catch_plot_2,
+                                em_ssb_plot_1, em_ssb_plot_2,
+                                mod_NAA_plot_1, mod_NAA_plot_2,
+                                mod_fbar_plot_1, mod_fbar_plot_2)
+      
+      multi.page <- ggpubr::ggarrange(plotlist = diagnostics_plots, nrow = 2, ncol = 1) 
       ggpubr::ggexport(multi.page, filename = pdf_path <- here(folder_path, paste("sens_run_",run_id,"_plots.pdf",sep="")))
+      print(paste("Done with NID:",run_id))
+      beepr::beep(1)
     } # PLOTTING IF ENDS
     ##### SAVE MODEL RUN SETTINGS  #####
   } # FOR LOOP ENDS
 } # IF ENDS
 
+model_csv <- c("mod_1", "mod_2","mod_3")
+sens_analysis_to_csv <- tidyr::crossing(proc_error= proc_error_v, 
+                                        mse_gap = mse_gaps_v, 
+                                        gauss_width=gauss_width_v,
+                                        model=model_csv)
+
+sens_analysis_to_csv <- sens_analysis_to_csv %>% mutate(run_id=rep(1:18, each=3), .before=1)
+sens_analysis_to_csv <- sens_analysis_to_csv %>% mutate(model_path=here(folder_path,paste("sens_run_",run_id,"_",model,".RDS",sep="")))
+folder_path <- here("models","sensitivity_analysis",folder_name)
+write_csv(sens_analysis_to_csv, here(folder_path, "all_model_settings.csv"))
+
+print("Done with the whole sensitivity run")
+run_end_time <- Sys.time()
+run_total_time_hours <- floor(as.numeric(difftime(run_end_time, run_start_time, units=c("hours"))))
+run_total_time_mins <- floor(as.numeric(difftime(run_end_time, run_start_time, units=c("mins"))) %% 60)
+run_total_time_secs <- floor(as.numeric(difftime(run_end_time, run_start_time, units=c("secs"))) %% 60)
+print(paste("Total execution time was", run_total_time_hours, "hours and", 
+            run_total_time_mins, "minutes and", run_total_time_secs, 
+            "seconds", sep=" "))
+beepr::beep(2)
+
+#### DISCARD EVERYTHING BELOW ####
 
 #### EXPERIMENTAL MINI CHUNK HERE ####
 # Get models into a list
@@ -679,7 +833,7 @@ ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) +
   theme_bw()
 
 
-#### PREDICTED CATCH ####
+#### PREDICTED CATCH -  ####
 # Fleet 1
 plot(mod1$om$rep$pred_catch[,1], type = "l", col = "red")
 lines(mod2$om$rep$pred_catch[,1], type = "l", col = "blue")
@@ -708,6 +862,24 @@ lines(mod1$em_full[[1]]$rep$NAA[,,,1], col = "red")
 # Fishing pressure
 plot(mod1$om$rep$Fbar[,1], type = "l")
 lines(mod1$em_full[[1]]$rep$Fbar[,1], col = "red")
+lines(mod2$em_full[[1]]$rep$Fbar[,1], col = "blue")
+lines(mod3$em_full[[1]]$rep$Fbar[,1], col = "green")
+
+plot(mod1$om$rep$Fbar[,2], type = "l")
+lines(mod1$em_full[[1]]$rep$Fbar[,2], col = "red")
+lines(mod2$em_full[[1]]$rep$Fbar[,2], col = "blue")
+lines(mod3$em_full[[1]]$rep$Fbar[,2], col = "green")
+
+plot(mod1$om$rep$Fbar[,3], type = "l")
+lines(mod1$em_full[[1]]$rep$Fbar[,3], col = "red")
+lines(mod2$em_full[[1]]$rep$Fbar[,3], col = "blue")
+lines(mod3$em_full[[1]]$rep$Fbar[,3], col = "green")
+
+
+plot(mod1$om$rep$Fbar[,4], type = "l")
+lines(mod1$em_full[[1]]$rep$Fbar[,4], col = "red")
+lines(mod2$em_full[[1]]$rep$Fbar[,4], col = "blue")
+lines(mod3$em_full[[1]]$rep$Fbar[,4], col = "green")
 
 # Predicted vs. estimated catch
 plot(mod1$om$rep$pred_catch[,1], type = "l")
@@ -766,3 +938,71 @@ pdf(here("plots","multi_page_gridExtra2.pdf"), width = 12, height = 8)
 marrangeGrob(plots_list_x, nrow = 2, ncol = 2)
 dev.off()
 
+
+#### DATAFRAME FOR STORING PARAMETER ESTIMATES AND DIFFERENCES ####
+# Required columns
+# 1. RUN_ID
+# 2. proc_error
+# 3. mse_gap
+# 4. gauss_width
+# 5. parameter
+# 6. OM or EM
+# 7. diff or raw_value
+# 8. desc - 'Show the equation here' or the model number
+# 9. value
+
+list_1 <- list(run_id=1, proc_error=0.1, mse_gap=3, gauss_width=0.1,
+               parameter="SSB",om_em="OM",
+               diff_or_raw="raw",desc="Model 1", value=2.5e10)
+
+list_2 <- list(run_id=2, proc_error=0.1, mse_gap=6, gauss_width=0.1,
+               parameter="SSB",om_em="OM",
+               diff_or_raw="diff",desc="Model 1 - Model 2", value=1.3e10)
+
+list_3 <- list(run_id=3, proc_error=0.1, mse_gap=rep(5,30), gauss_width=0.1,
+               parameter="SSB",om_em="OM",
+               diff_or_raw="raw",desc="Model 1 - Model 2", value=1.3e10)
+# NOTE: `as.data.frame(list_3)` works
+
+all_lists <- list(list_1, list_2)
+
+param_df <- do.call(rbind.data.frame, all_lists)
+
+# Binding lists of unequal length
+
+all_lists_2 <- list(list_1, list_2, list_3)
+
+# The `rbind.data.frame` call doesn't work on unequal lists
+param_df_2 <- do.call(rbind.data.frame, all_lists_2)
+
+# But data.table::rbindlist does!
+data.table::rbindlist(list(list_1, list_2, list_3), fill = TRUE)
+
+View(data.table::rbindlist(list(list_1, list_2, list_3), fill = TRUE))
+
+vec <- 1:18
+
+# Repeat each element of the vector three times
+result <- rep(vec, each = 3) 
+
+# Print the result
+print(result)
+
+
+# Handling errors
+
+safe_log <- function(x) {
+  tryCatch(
+    expr = {
+      log(x)
+    },
+    error = function(e) {
+      message(paste("An error occurred in the code:", conditionMessage(e)))
+      return(NA) # Return NA in case of an error
+    }
+  )
+}
+
+# Example usage:
+print(safe_log(10))
+print(safe_log("a")) # This will trigger the error handler
