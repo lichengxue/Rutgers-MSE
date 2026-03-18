@@ -312,4 +312,17 @@ the guassian function.
 - Changing [`code/em_sensitivity_analysis.R`](code/sensitivity_analysis.R) to be more flexible in the future
 - Revert back to the following commit if something bad happens or break: [d66ff06](https://github.com/lichengxue/Rutgers-MSE/commit/d66ff0615ae8b0df63daf3e93f447c2cd3ed4067)
 
+## 03/05/2026 log
+
+- Development undergoing in `dev` branch
+- Writing methodology 
+
+## 03/18/2026 log
+
+- Uninstalling `whamMSE` (Projection-MSE branch)
+- Used the following commands
+  - `remove.packages("whamMSE")`
+  - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+- Then incorporated new code for an estimation model that has a fixed temperature-recruitment relationship.
+- The model cannot _estimate_ the parameters related to the gaussian link by itself ($T_{opt}$,$w_{\text{opt}}$)
 
