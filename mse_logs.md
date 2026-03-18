@@ -324,5 +324,5 @@ the guassian function.
   - `remove.packages("whamMSE")`
   - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
 - Then incorporated new code for an estimation model that has a fixed temperature-recruitment relationship.
-- The model cannot _estimate_ the parameters related to the gaussian link by itself ($T_{opt}$,$w_{\text{opt}}$)
+- The model cannot _estimate_ the parameters related to the gaussian link by itself ($T_{opt}$, $w_{\text{opt}}$)
 
