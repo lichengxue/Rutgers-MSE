@@ -67,11 +67,28 @@ sens_analysis_settings <- sens_analysis_settings %>% mutate(nid=row_number(), .b
 
 #### IF THIS IS A TEST RUN - YOU ONLY WANT TO RUN A COUPLE OF ROWS!!! ####
 # NOTE: ONLY USE FIVE ROWS BECAUSE THIS IS A TEST RUN
-sens_analysis_settings <- sens_analysis_settings %>% head(n=1)
+# sens_analysis_settings <- sens_analysis_settings %>% tail(n=1)
 
 #### EXTERNAL FUNCTIONS ####
 # Source reusable functions from `functions/reusable_functions.R`
 source(here("functions","reusable_functions.R"))
+
+SAVE_MODEL <- TRUE
+if(SAVE_MODEL){
+  # Create a folder for saving all the data and run information
+  # We will use the date+time from the start time of the code
+  # Format run_start_time as a posixDate object
+  folder_name <- format(run_start_time, "%Y-%m-%d_%H-%M-%S")
+  folder_path <- here("models","sensitivity_analysis",folder_name,"models")
+  # Create a folder. Suppress warnings and allow recursive folders to be created
+  dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
+  # Folder for plots
+  folder_path_plots <- here("models","sensitivity_analysis",folder_name,"plots")
+  dir.create(folder_path_plots, recursive = TRUE, showWarnings = FALSE)
+  # Folder for diagnostics
+  folder_path_diagnostics <- here("models","sensitivity_analysis",folder_name,"diagnostics")
+  dir.create(folder_path_diagnostics, recursive = TRUE, showWarnings = FALSE)
+}
 
 #### DO THE SENSITIVITY ANALYSIS OR NOT? ####
 # WARNING: THIS CAN TAKE A LOT OF TIME
@@ -91,7 +108,7 @@ if(DO_ANALYSIS){
       
       # NOTE: OM model ends in 2021 and EM starts in 2022
       # But the bottom temperature dataset goes until 2022
-      n_feedback_years <- 15
+      n_feedback_years <- 18
       
       OMa  <- readRDS("models/OM_base.RDS")
       asap <- read_asap3_dat("data/north.dat")
@@ -113,7 +130,7 @@ if(DO_ANALYSIS){
       # for this test, force north BT deviations to 0 so all variation comes from Ecov_re
       # ecov$mean[,1] <- 0
       
-      ecov$year <- c(north_bt[,"year"], 2023:(2025+12))
+      ecov$year <- c(north_bt[,"year"], 2023:(2025+15))
       
       plot(ecov$year, ecov$mean[,1], type = "l", main = "Ecov mean (North BT)", xlab = "Year")
       
@@ -133,7 +150,7 @@ if(DO_ANALYSIS){
       
       year_start <- 1989
       year_end   <- 2021
-      MSE_years  <- 15
+      MSE_years  <- 18
       
       hist_years <- length(year_start:year_end)
       total_years <- length(year_start:(year_end + MSE_years))
@@ -149,7 +166,7 @@ if(DO_ANALYSIS){
       user_waa <- list()
       user_waa$waa <- array(NA, dim = c(5, 33 + n_feedback_years, 8))
       user_waa$waa[, 1:33, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]
-      for (i in 34:(36+12)) {
+      for (i in 34:(36+15)) {
         user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), 33, ]
       }
       user_waa$waa_pointer_fleets   <- 1:2
@@ -298,7 +315,7 @@ if(DO_ANALYSIS){
       input_Ecov$data$use_indices[1:33,]     <- OMa$input$data$use_indices[,1:2]
       input_Ecov$data$use_index_paa[1:33,]   <- OMa$input$data$use_index_paa[,1:2]
       
-      for (i in 34:(36+12)) {
+      for (i in 34:(36+15)) {
         input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[33,1:2, drop = FALSE]
       }
       
@@ -307,7 +324,7 @@ if(DO_ANALYSIS){
       Neff1 <- do.call(cbind, lapply(idx1, function(i)
         asap[[1]]$dat$IAA_mats[[i]][, 12, drop = FALSE]))
       index_Neff <- Neff1
-      index_Neff <- rbind(index_Neff, index_Neff[rep(33,15), , drop = FALSE])
+      index_Neff <- rbind(index_Neff, index_Neff[rep(33,MSE_years), , drop = FALSE])
       input_Ecov$data$index_Neff <- index_Neff
       
       input_Ecov <- whamMSE::update_input_index_info(
@@ -321,13 +338,13 @@ if(DO_ANALYSIS){
       input_Ecov$data$use_agg_catch[1:33,]   <- OMa$input$data$use_agg_catch[,1:2]
       input_Ecov$data$use_catch_paa[1:33,]   <- OMa$input$data$use_catch_paa[,1:2]
       
-      for (i in 34:(36+12)) {
+      for (i in 34:(36+15)) {
         input_Ecov$data$agg_catch_sigma[i,] <- OMa$input$data$agg_catch_sigma[33,1:2]
       }
       
       Neff1 <- asap[[1]]$dat$catch_Neff
       catch_Neff <- cbind(Neff1)
-      catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33,15), , drop = FALSE])
+      catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33,MSE_years), , drop = FALSE])
       
       input_Ecov$data$catch_Neff <- catch_Neff
       
@@ -449,11 +466,14 @@ if(DO_ANALYSIS){
       hcr$hcr.opts <- list(use_FXSPR = TRUE, percentFXSPR = 75) # Apply F at 75% unfished SPR
       
       #### SENSITIVITY ANALYSIS POINT 3 ####
-      assess.interval <- mse_gap # Assessments occur every 3 years
+      assess.interval <- mse_gap # Assessments occur every 3 or 6 years. Depends on the configuration
       base.years <- year_start:year_end
       terminal.year <- tail(base.years, 1)
-      last.year <- 2024+12
+      last.year <- 2024+15
       assess.years <- seq(terminal.year, last.year - assess.interval, by = assess.interval)
+      
+      # ggplot assess.years component
+      assess_years_lines <- geom_vline(xintercept=assess.years, linetype="dashed", color="grey", alpha=0.75)
       
       # Remember to use this config for EM NAA re
       NAA_re_em = NAA_re
@@ -465,7 +485,7 @@ if(DO_ANALYSIS){
       
       #### 13. SETUP EMs & GATHER THEIR RESULTS ####
       # Execute the MSE loop for one realization
-      ##### MODEL 1 - ASSUMES A NO LAG LINEAR RELATIONSHIP BETWEEN  #####
+      ##### MODEL 1 - ASSUMES A NO LAG LINEAR RELATIONSHIP BETWEEN TEMP AND RECRUITMENT #####
       mod1 <- loop_through_fn(
         om = om_with_data,
         em_info = info,
@@ -524,7 +544,7 @@ if(DO_ANALYSIS){
         save.last.em = TRUE # If True, will save all EM information from every iteration, file size can be large, but you can only plot the EM output (using plot_wham_output function) when TRUE...
       )
       
-      ##### MODEL 3 - NO RELATIONSHIP BETWEEN TEMPERATURE AND RECRUITMENT BUT THE OPTION IS THERE #####
+      ##### MODEL 3 - NO RELATIONSHIP BETWEEN TEMPERATURE AND RECRUITMENT BUT ESTIMATE TEMPERATURE TIMESERIES #####
       # The model will try to estimate the timeseries of the temperature itself (mean, stdev, autocorrelation)
       ecov_em1 <- ecov_em
       ecov_em1$recruitment_how[] = "none"
@@ -599,31 +619,10 @@ if(DO_ANALYSIS){
         save.last.em = TRUE
       )
       
-      #### SAVE MODEL ####
-      # FILE/FOLDER STRUCTURE FOR MODEL SAVING: models/sensitivity_analysis
-      SAVE_MODEL <- TRUE
-      if(SAVE_MODEL){
-        # Create a folder for saving all the data and run information
-        # We will use the date+time from the start time of the code
-        # Format run_start_time as a posixDate object
-        folder_name <- format(run_start_time, "%Y-%m-%d_%H-%M-%S")
-        folder_path <- here("models","sensitivity_analysis",folder_name,"models")
-        # Create a folder. Suppress warnings and allow recursive folders to be created
-        dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
-        saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"_mod_1",".RDS",sep="")))
-        saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"_mod_2",".RDS",sep="")))
-        saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"_mod_3",".RDS",sep="")))
-        saveRDS(mod4, here(folder_path,paste("sens_run_",run_id,"_mod_4",".RDS",sep="")))
-        # for(iter in seq(iterations)){
-        #   saveRDS(model_list[iter], here(folder_path,paste("model_run_",iter,".RDS",sep="")))
-        # }
-        print(paste("Models saved for Run",run_id,sep=" "))
-      }
-      
       #### SAVE PLOTS ####
       if(SAVE_MODEL){
-        folder_path <- here("models","sensitivity_analysis",folder_name,"plots")
-        dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
+        # folder_path_plots <- here("models","sensitivity_analysis",folder_name,"plots")
+        # dir.create(folder_path_plots, recursive = TRUE, showWarnings = FALSE)
         ##### OPERATING MODEL - ABUNDANCE[SSB] #####
         plot(mod1$om$rep$SSB, type = "l", col = "red")
         lines(mod2$om$rep$SSB, type = "l", col = "blue")
@@ -720,6 +719,7 @@ if(DO_ANALYSIS){
         em_ssb_plot_1 <- ggplot(mod_em_ssb_df, aes(year, SSB, color=as.factor(model))) + 
           geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
           scale_x_continuous(breaks=seq(1985,2040,5)) + 
+          assess_years_lines + 
           labs(color="Model", title=paste("SSB in EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
           theme_bw() + 
           theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
@@ -727,6 +727,47 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         em_ssb_plot_2 <- ggplot(mod_em_ssb_df, aes(year, SSB, color=as.factor(model))) + 
           geom_line(alpha=0.5, linewidth=1) + 
+          assess_years_lines + 
+          labs(color="Model") + 
+          theme_bw()
+        
+        #### PREDICTED vs. ESTIMATED CATCH ####
+        
+        mod1_om_pred_catch <- data.frame(PRED_CATCH=mod1$om$rep$pred_catch[,1])
+        mod1_om_pred_catch <- cbind(mod1_om_pred_catch,model='OM')
+        mod1_om_pred_catch <- cbind(ID = as.integer(1:nrow(mod1_om_pred_catch)), mod1_om_pred_catch)
+        mod1_em_pred_catch <- data.frame(PRED_CATCH=mod1$em_full[[1]]$rep$pred_catch[,1])
+        mod1_em_pred_catch <- cbind(mod1_em_pred_catch,model='Model 1')
+        mod1_em_pred_catch <- cbind(ID = as.integer(1:nrow(mod1_em_pred_catch)), mod1_em_pred_catch)
+        mod2_em_pred_catch <- data.frame(PRED_CATCH=mod2$em_full[[1]]$rep$pred_catch[,1])
+        mod2_em_pred_catch <- cbind(mod2_em_pred_catch,model='Model 2')
+        mod2_em_pred_catch <- cbind(ID = as.integer(1:nrow(mod2_em_pred_catch)), mod2_em_pred_catch)
+        mod3_em_pred_catch <- data.frame(PRED_CATCH=mod3$em_full[[1]]$rep$pred_catch[,1])
+        mod3_em_pred_catch <- cbind(mod3_em_pred_catch,model='Model 3')
+        mod3_em_pred_catch <- cbind(ID = as.integer(1:nrow(mod3_em_pred_catch)), mod3_em_pred_catch)
+        mod4_em_pred_catch <- data.frame(PRED_CATCH=mod4$em_full[[1]]$rep$pred_catch[,1])
+        mod4_em_pred_catch <- cbind(mod4_em_pred_catch,model='Model 4')
+        mod4_em_pred_catch <- cbind(ID = as.integer(1:nrow(mod4_em_pred_catch)), mod4_em_pred_catch)
+        
+        mod_em_pred_catch <- rbind(mod1_om_pred_catch,mod1_em_pred_catch, 
+                                   mod2_em_pred_catch, mod3_em_pred_catch, 
+                                   mod4_em_pred_catch)
+        mod_em_pred_catch_df <- tibble::as_tibble(mod_em_pred_catch)
+        mod_em_pred_catch_df <- mod_em_pred_catch_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
+        
+        # Plot via ggplot
+        em_pred_catch_plot_1 <- ggplot(mod_em_pred_catch_df, aes(year, PRED_CATCH, color=as.factor(model))) + 
+          geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+          assess_years_lines + 
+          scale_x_continuous(breaks=seq(1985,2040,5)) + 
+          labs(color="Model", title=paste("PRED. CATCH in EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
+          theme_bw() + 
+          theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
+        
+        # Plot via ggplot
+        em_pred_catch_plot_2 <- ggplot(mod_em_pred_catch_df, aes(year, PRED_CATCH, color=as.factor(model))) + 
+          geom_line(alpha=0.5, linewidth=1) + 
+          assess_years_lines + 
           labs(color="Model") + 
           theme_bw()
         
@@ -734,7 +775,7 @@ if(DO_ANALYSIS){
         # NAA - Age class 1
         # EM vs. OM
         mod1_om_NAA <- data.frame(NAA_1=mod1$om$rep$NAA[,,,1])
-        mod1_om_NAA <- cbind(mod1_om_NAA,model='Model 1 - OM')
+        mod1_om_NAA <- cbind(mod1_om_NAA,model='OM')
         mod1_om_NAA <- cbind(ID = as.integer(1:nrow(mod1_om_NAA)), mod1_om_NAA)
         mod1_em_NAA <- data.frame(NAA_1=mod1$em_full[[1]]$rep$NAA[,,,1])
         mod1_em_NAA <- cbind(mod1_em_NAA,model='Model 1 - EM')
@@ -746,7 +787,7 @@ if(DO_ANALYSIS){
         mod3_em_NAA <- cbind(mod3_em_NAA,model='Model 3 - EM')
         mod3_em_NAA <- cbind(ID = as.integer(1:nrow(mod3_em_NAA)), mod3_em_NAA)
         mod4_em_NAA <- data.frame(NAA_1=mod4$em_full[[1]]$rep$NAA[,,,1])
-        mod4_em_NAA <- cbind(mod3_em_NAA,model='Model 4 - EM')
+        mod4_em_NAA <- cbind(mod4_em_NAA,model='Model 4 - EM')
         mod4_em_NAA <- cbind(ID = as.integer(1:nrow(mod4_em_NAA)), mod4_em_NAA)
         
         mod_NAA <- rbind(mod1_om_NAA, mod1_em_NAA, mod2_em_NAA, mod3_em_NAA, mod4_em_NAA)
@@ -756,6 +797,7 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         mod_NAA_plot_1 <- ggplot(mod_NAA_df, aes(year, NAA_1, color=as.factor(model))) + 
           geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+          assess_years_lines + 
           scale_x_continuous(breaks=seq(1985,2040,5)) + 
           labs(color="Model", title=paste("NAA 1 in OM & EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
           theme_bw() + 
@@ -764,6 +806,7 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         mod_NAA_plot_2 <- ggplot(mod_NAA_df, aes(year, NAA_1, color=as.factor(model))) + 
           geom_line(alpha=0.5, linewidth=1) + 
+          assess_years_lines + 
           scale_x_continuous(breaks=seq(1985,2040,5)) + 
           labs(color="Model") + 
           theme_bw() + 
@@ -771,7 +814,7 @@ if(DO_ANALYSIS){
         
         #### FISHING PRESSURE ####
         mod1_om_fbar <- data.frame(fbar=mod1$om$rep$Fbar[,1])
-        mod1_om_fbar <- cbind(mod1_om_fbar,model='Model 1 - OM')
+        mod1_om_fbar <- cbind(mod1_om_fbar,model='OM')
         mod1_om_fbar <- cbind(ID = as.integer(1:nrow(mod1_om_fbar)), mod1_om_fbar)
         mod1_em_fbar <- data.frame(fbar=mod1$em_full[[1]]$rep$Fbar[,1])
         mod1_em_fbar <- cbind(mod1_em_fbar,model='Model 1 - EM')
@@ -793,6 +836,7 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         mod_fbar_plot_1 <- ggplot(mod_fbar_df, aes(year, fbar, color=as.factor(model))) + 
           geom_line(alpha=0.5, linewidth=1) + facet_wrap(~model, nrow=2) + 
+          assess_years_lines + 
           scale_x_continuous(breaks=seq(1985,2040,5)) + 
           labs(color="Model", title=paste("Fbar in OM & EM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) + 
           theme_bw() + 
@@ -801,12 +845,61 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         mod_fbar_plot_2 <- ggplot(mod_fbar_df, aes(year, fbar, color=as.factor(model))) + 
           geom_line(alpha=0.5, linewidth=1) + 
+          assess_years_lines + 
           scale_x_continuous(breaks=seq(1985,2040,5)) + 
           labs(color="Model") + 
           theme_bw() + 
           theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
         
         #### PARAMETER ESTIMATES AND DIFFERENCES - STILL TO BE DONE! ####
+        
+        ##### ESTIMATED SSB #####
+        ssb_mod_om_1_em_1 <-mod1$om$rep$SSB[1:(max(assess.years)-1989+1)] - mod1$em_full[[1]]$rep$SSB
+        ssb_mod_1_2 <- mod1$em_full[[1]]$rep$SSB - mod2$em_full[[1]]$rep$SSB
+        ssb_mod_1_3 <- mod1$em_full[[1]]$rep$SSB - mod3$em_full[[1]]$rep$SSB
+        ssb_mod_1_4 <- mod1$em_full[[1]]$rep$SSB - mod4$em_full[[1]]$rep$SSB
+        ssb_mod_2_3 <- mod2$em_full[[1]]$rep$SSB - mod3$em_full[[1]]$rep$SSB
+        ssb_mod_2_4 <- mod2$em_full[[1]]$rep$SSB - mod4$em_full[[1]]$rep$SSB
+        ssb_mod_3_4 <- mod3$em_full[[1]]$rep$SSB - mod4$em_full[[1]]$rep$SSB
+        
+        em_ssb_dif_table <- data.frame(year = seq(year_start, max(assess.years)),
+                                       om_em_1_1=ssb_mod_om_1_em_1,
+                                       model_1_2=ssb_mod_1_2,
+                                       model_1_3=ssb_mod_1_3,
+                                       model_1_4=ssb_mod_1_4,
+                                       model_2_3=ssb_mod_2_3,
+                                       model_2_4=ssb_mod_2_4,
+                                       model_3_4=ssb_mod_3_4)
+        
+        
+        ##### MEAN REC PARAMETERS #####
+        mod2$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars
+        rec_par_mod_2_1 <- data.frame(model_names="EM2 - EM1",mod2$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars)
+        rec_par_mod_3_1 <- data.frame(model_names="EM3 - EM1",mod3$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars)
+        rec_par_mod_4_1 <- data.frame(model_names="EM4 - EM1",mod4$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars)
+        rec_par_mod_2_3 <- data.frame(model_names="EM2 - EM3",mod2$em_full[[1]]$parList$mean_rec_pars - mod3$em_full[[1]]$parList$mean_rec_pars)
+        rec_par_mod_2_4 <- data.frame(model_names="EM2 - EM4",mod2$em_full[[1]]$parList$mean_rec_pars - mod4$em_full[[1]]$parList$mean_rec_pars)
+        rec_par_mod_3_4 <- data.frame(model_names="EM3 - EM4",mod3$em_full[[1]]$parList$mean_rec_pars - mod4$em_full[[1]]$parList$mean_rec_pars)
+        
+        rec_par_df <- rbind(rec_par_mod_2_1, rec_par_mod_3_1, rec_par_mod_4_1,
+                            rec_par_mod_2_3, rec_par_mod_2_4, rec_par_mod_3_4)
+        
+        ##### ECOV BETA R #####
+        e_mod_2_1 <- mod2$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
+        e_mod_3_1 <- mod3$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
+        e_mod_4_1 <- mod4$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
+        e_mod_2_3 <- mod2$em_full[[1]]$parList$Ecov_beta_R - mod3$em_full[[1]]$parList$Ecov_beta_R
+        e_mod_2_4 <- mod2$em_full[[1]]$parList$Ecov_beta_R - mod4$em_full[[1]]$parList$Ecov_beta_R
+        e_mod_3_4 <- mod3$em_full[[1]]$parList$Ecov_beta_R - mod4$em_full[[1]]$parList$Ecov_beta_R
+        ecov_beta_mod_2_1 <- data.frame(model_names="EM2 - EM1", diff=e_mod_2_1[,,1])
+        ecov_beta_mod_3_1 <- data.frame(model_names="EM3 - EM1", diff=e_mod_3_1[,,1])
+        ecov_beta_mod_4_1 <- data.frame(model_names="EM4 - EM1", diff=e_mod_4_1[,,1])
+        ecov_beta_mod_2_3 <- data.frame(model_names="EM2 - EM3", diff=e_mod_2_3[,,1])
+        ecov_beta_mod_2_4 <- data.frame(model_names="EM2 - EM4", diff=e_mod_2_4[,,1])
+        ecov_beta_mod_3_4 <- data.frame(model_names="EM3 - EM4", diff=e_mod_3_4[,,1])
+        ecov_beta_df <- rbind(ecov_beta_mod_2_1, ecov_beta_mod_3_1,
+                              ecov_beta_mod_4_1, ecov_beta_mod_2_3,
+                              ecov_beta_mod_2_4, ecov_beta_mod_3_4)
         
         # Arrange and save the plots to a multi-page PDF (4 plots per page: 2 rows, 2 columns)
         # pdf(here(folder_path,paste("om_ssb_plot_run_",run_id,".pdf",sep="")), width = 12, height = 8)
@@ -819,14 +912,41 @@ if(DO_ANALYSIS){
         diagnostics_plots <- list(om_ssb_plot_1, om_ssb_plot_2, 
                                   om_pred_catch_plot_1, om_pred_catch_plot_2,
                                   em_ssb_plot_1, em_ssb_plot_2,
+                                  em_pred_catch_plot_1, em_pred_catch_plot_2,
                                   mod_NAA_plot_1, mod_NAA_plot_2,
                                   mod_fbar_plot_1, mod_fbar_plot_2)
         
         multi.page <- ggpubr::ggarrange(plotlist = diagnostics_plots, nrow = 2, ncol = 1) 
-        ggpubr::ggexport(multi.page, filename = pdf_path <- here(folder_path, paste("sens_run_",run_id,"_plots.pdf",sep="")))
+        ggpubr::ggexport(multi.page, filename = pdf_path <- here(folder_path_plots, paste("sens_run_",run_id,"_plots.pdf",sep="")))
         print(paste("Done with NID:",run_id))
         beepr::beep(1)
       } # PLOTTING IF ENDS
+      
+      #### SAVE MODEL RUNS ####
+      # FILE/FOLDER STRUCTURE FOR MODEL SAVING: models/sensitivity_analysis
+      SAVE_MODEL <- TRUE
+      if(SAVE_MODEL){
+        # # Create a folder for saving all the data and run information
+        # # We will use the date+time from the start time of the code
+        # # Format run_start_time as a posixDate object
+        # folder_name <- format(run_start_time, "%Y-%m-%d_%H-%M-%S")
+        # folder_path <- here("models","sensitivity_analysis",folder_name,"models")
+        # # Create a folder. Suppress warnings and allow recursive folders to be created
+        # dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
+        saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"_mod_1",".RDS",sep="")))
+        saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"_mod_2",".RDS",sep="")))
+        saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"_mod_3",".RDS",sep="")))
+        saveRDS(mod4, here(folder_path,paste("sens_run_",run_id,"_mod_4",".RDS",sep="")))
+        # for(iter in seq(iterations)){
+        #   saveRDS(model_list[iter], here(folder_path,paste("model_run_",iter,".RDS",sep="")))
+        # }
+        # Write in model results
+        write_csv(em_ssb_dif_table, here(folder_path_diagnostics,paste("diagnostics_ssb_diff_",run_id,".csv",sep="")))
+        write_csv(rec_par_df, here(folder_path_diagnostics,paste("diagnostics_rec_par_diff_",run_id,".csv",sep="")))
+        write_csv(ecov_beta_df, here(folder_path_diagnostics,paste("ecov_beta_diff_",run_id,".csv",sep="")))
+        print(paste("Models saved for Run",run_id,sep=" "))
+        beepr::beep(3)
+      }
     },
     error=function(e){
       skip_to_next <<- TRUE
@@ -936,6 +1056,7 @@ mod1$em_full[[1]]$rep$SSB - mod2$em_full[[1]]$rep$SSB
 mod2$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars
 mod2$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
 
+
 # NAA - Age class 1
 # EM vs. OM
 plot(mod1$om$rep$NAA[,,,1], type = "l")
@@ -966,12 +1087,17 @@ lines(mod3$em_full[[1]]$rep$Fbar[,4], col = "green")
 # Predicted vs. estimated catch
 plot(mod1$om$rep$pred_catch[,1], type = "l")
 lines(mod1$em_full[[1]]$rep$pred_catch[,1], col = "red")
+lines(mod2$em_full[[1]]$rep$pred_catch[,1], col = "green")
+lines(mod3$em_full[[1]]$rep$pred_catch[,1], col = "blue")
+
 
 mod1$em_input[[1]]$par$Ecov_beta_R
 mod2$em_input[[1]]$par$Ecov_beta_R
 
 mod1$em_input[[1]]$par$Ecov_process_pars
 mod2$em_input[[1]]$par$Ecov_process_pars
+mod3$em_input[[1]]$par$Ecov_process_pars
+mod4$em_input[[1]]$par$Ecov_process_pars
 
 mod1$em_full[[1]]$parList$mean_rec_pars - mod2$em_full[[1]]$parList$mean_rec_pars
 mod1$em_full[[1]]$parList$logit_q - mod2$em_full[[1]]$parList$logit_q
@@ -981,6 +1107,8 @@ mod2$em_full[[1]]$sdrep
 
 mod1$em_full[[1]]$parList$Ecov_beta_R
 mod2$em_full[[1]]$parList$Ecov_beta_R
+mod3$em_full[[1]]$parList$Ecov_beta_R
+mod4$em_full[[1]]$parList$Ecov_beta_R
 
 # Population correlation coefficient
 mod1$om$parList$trans_NAA_rho[,,1]
