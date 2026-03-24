@@ -1,6 +1,6 @@
 ---
 title: "BSB MSE Study"
-author: "RMWJ Bandara"
+author: "RMWJ Bandara and Chengxue Li"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 output:
   pdf_document:
@@ -195,3 +195,21 @@ The MSE followed a closed-loop feedback design. At each assessment year, simulat
 We generated 100 independent stochastic realizations to quantify uncertainty and ensure that results were not driven by a single stochastic outcome. Each realization represented an independent draw of process and observation errors, including recruitment deviations, numbers-at-age transition deviations, and observation error in the Ecov series (Eq. \eqref{eq:om_ecov_obs}). As a result, each realization produced unique population dynamics and observation datasets.
 
 Within each realization, all three EMs (management procedures) were applied to the same underlying OM trajectory, which enabled within-realization comparisons of management performance among EMs. Performance metrics were recorded for each EM and realization and included spawning stock biomass (SSB), total and fleet-specific catch, and indicators of overfishing (e.g., the probability that realized \(F\) exceeded \(F_{40\%}\)). Metrics were summarized across the 100 realizations to provide robust estimates of expected performance and trade-offs among EM structures under environmentally driven recruitment dynamics.
+
+## Sensitivity analysis
+
+We conducted a sensitivity analysis to understand how parameterization of 
+
+1. NAA process error: \(\sigma_{\text{NAA}}\)
+2. Assessment interval (MSE gap): \(t_{\text{g}}\)
+3. Width of gaussian relationship between temperature and recruitment: \(w_{\text{opt}}\)
+
+will effect the ability of the different estimation models to generate catch advice and estimate different stock parameters.
+
+We configured different values for each parameter with
+
+1. \(\sigma_{\text{NAA}} = \{0.2, 0.5, 1.0\}\), where 0.2 is realistic for most stocks in the Northeast and 1 is quite high and rather unrealistic
+2.  \(t_{\text{g}} = \{3\ \text{years}, 6\ \text{years}\}\)
+3.  \(w_{\text{opt}} = \{0.1, 1, 5\}\) where 0.1 is an extremely narrow temperature response curve and 5 is very generous and will give good recruitment responses even to temperatures far from optimal value.
+
+
