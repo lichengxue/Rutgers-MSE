@@ -122,7 +122,7 @@ if(DO_ANALYSIS){
 
       # NOTE: OM model ends in 2021 and EM starts in 2022
       # But the bottom temperature dataset goes until 2022
-      n_feedback_years <- 18
+      n_feedback_years <- 30
 
       OMa  <- readRDS("models/OM_base.RDS")
       asap <- read_asap3_dat("data/north.dat")
@@ -569,7 +569,7 @@ if(DO_ANALYSIS){
       )
 
       ##### MODEL 3 - Assumes Gaussian relationship between temperature and recruitment #####
-      # IMPORTANT: As of now (03/18/2026) we don't estimate it directly. We provide direct values for the relationship (Topt, Width)
+      # IMPORTANT: As of now (03/18/2026) we don't estimate it directly. We fix the values for the relationship (Topt, Width)
       ecov_em1 <- ecov_em
       ecov_em1$recruitment_how[] = "none"
       mod3 <- loop_through_fn(
@@ -615,7 +615,7 @@ if(DO_ANALYSIS){
         save.last.em = TRUE
       )
 
-#### SAVE PLOTS ####
+      #### SAVE PLOTS ####
       if(SAVE_MODEL){
         # folder_path_plots <- here("models","sensitivity_analysis",folder_name,"plots")
         # dir.create(folder_path_plots, recursive = TRUE, showWarnings = FALSE)
@@ -644,6 +644,7 @@ if(DO_ANALYSIS){
         om_ssb_plot_1 <- ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) +
           geom_line(alpha=1.0, linewidth=1) + facet_wrap(~model, nrow=2) +
           scale_x_continuous(breaks=seq(1985,2040,5)) +
+          assess_years_lines +
           labs(color="Model", title=paste("SSB in OM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) +
           theme_bw() +
           theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
@@ -651,6 +652,7 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         om_ssb_plot_2 <- ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) +
           geom_line(alpha=1.0, linewidth=1) +
+          assess_years_lines +
           labs(color="Model") +
           theme_bw()
 
@@ -674,6 +676,7 @@ if(DO_ANALYSIS){
         om_pred_catch_plot_1 <- ggplot(mod_om_pred_catch_df, aes(year, PRED_CATCH, color=as.factor(model))) +
           geom_line(alpha=1.0, linewidth=1) + facet_wrap(~model, nrow=2) +
           scale_x_continuous(breaks=seq(1985,2040,5)) +
+          assess_years_lines +
           labs(color="Model", title=paste("PRED. CATCH in OM: ","sigma_naa=",proc_error, ", mse_gap=",mse_gap, ", gaussian_width=",gauss_width, sep=" ")) +
           theme_bw() +
           theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
@@ -681,6 +684,7 @@ if(DO_ANALYSIS){
         # Plot via ggplot
         om_pred_catch_plot_2 <- ggplot(mod_om_pred_catch_df, aes(year, PRED_CATCH, color=as.factor(model))) +
           geom_line(alpha=1.0, linewidth=1) +
+          assess_years_lines +
           labs(color="Model") +
           theme_bw()
 
