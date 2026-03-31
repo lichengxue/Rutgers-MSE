@@ -336,7 +336,7 @@ check if the package was broken.
 
 *Major change is that we are changing the MSE years from 15 to 18*
 
-1. Line 94 - `r n_feedback_years` changed from 15 to 18
+1. Line 94 - `{r} n_feedback_years` changed from 15 to 18
 2. Line 116 - `ecov$year <- c(north_bt[,"year"], 2023:(2025+12))` changed to `ecov$year <- c(north_bt[,"year"], 2023:(2025+15))`
 3. Line 136 - `r MSE_years` changed from 15 to 18 (_Maybe these two variables can be the same thing. Check back later_)
 4. Line 163 - `r for (i in 34:(36+12)) {` changed to `r for (i in 34:(36+15)) {`
@@ -360,5 +360,8 @@ This might need a server to run properly.
   - `remove.packages("whamMSE")`
   - `remotes::install_github("lichengxue/wham@Gaussian_test")`
   - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+
+## 03/31/2026 log
+
 
 
