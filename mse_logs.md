@@ -325,4 +325,40 @@ the guassian function.
   - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
 - Then incorporated new code for an estimation model that has a fixed temperature-recruitment relationship.
 - The model cannot _estimate_ the parameters related to the gaussian link by itself ($T_{opt}$, $w_{\text{opt}}$)
+- So as of right now, we estimate it and the model fits everything else around it. We can think of this as an *exceptionally strong prior* (_I guess...._)
+
+- Ran `code/em_sensitivity_analysis.R` for only the first 6 configurations of the sensitivity settings to 
+check if the package was broken.
+
+## 03/23/2026 log
+
+- Changing some parts of `code/em_sensitivity_analysis.R` for reproducibility and completeness. Listing them below.
+
+*Major change is that we are changing the MSE years from 15 to 18*
+
+1. Line 94 - `r n_feedback_years` changed from 15 to 18
+2. Line 116 - `ecov$year <- c(north_bt[,"year"], 2023:(2025+12))` changed to `ecov$year <- c(north_bt[,"year"], 2023:(2025+15))`
+3. Line 136 - `r MSE_years` changed from 15 to 18 (_Maybe these two variables can be the same thing. Check back later_)
+4. Line 163 - `r for (i in 34:(36+12)) {` changed to `r for (i in 34:(36+15)) {`
+4. Line 310 - `r index_Neff <- rbind(index_Neff, index_Neff[rep(33,15), , drop = FALSE])` changed to `r index_Neff <- rbind(index_Neff, index_Neff[rep(33,MSE_years), , drop = FALSE])`
+5. Line 312 - `r for (i in 34:(36+12)) {` changed to `r for (i in 34:(36+15)) {`
+5. Line 330 - `r catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33,15), , drop = FALSE])` changed to `r catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33,MSE_years), , drop = FALSE])`
+5. Line 335 - `r for (i in 34:(36+12)) {` changed to `for (i in 34:(36+15)) {`
+6. Line 466 - `r last.year <- 2024+12` changed to `r last.year <- 2024+15`
+
+## 03/24/2026 log
+
+*IMPORTANT*: Run time for just the first 4 configurations was 2 hours and 36 minutes and 8 seconds.
+This might need a server to run properly.
+
+
+## 03/26/2026 log
+
+- New `wham` branch is up!
+- Use the following updated instructions to uninstall and reinstall `wham` and `whamMSE` from now on.
+  - `remove.packages("wham")`
+  - `remove.packages("whamMSE")`
+  - `remotes::install_github("lichengxue/wham@Gaussian_test")`
+  - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+
 
