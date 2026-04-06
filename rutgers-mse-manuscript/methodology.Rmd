@@ -110,6 +110,7 @@ where \(\bar N_1\) denotes mean recruitment on the natural scale and \(\epsilon_
 
 We evaluated three estimation models (EMs), each treated as a management procedure (MP) within the MSE. All EMs used the same WHAM numbers-at-age structure (Eq. \eqref{eq:wham_naa}), assumed AR(1) recruitment deviations (Eq. \eqref{eq:rec_ar1_biascorr}), and used the two-sigma process error structure (Eq. \eqref{eq:two_sigma}), unless otherwise specified. The EMs differed in how Ecov was treated and whether recruitment depended on Ecov. The baseline EM was defined as the simplest model (no Ecov), followed by EMs that incorporate Ecov in different ways.
 
+
 ### EM-0 (baseline): no Ecov included
 
 The baseline EM omitted Ecov entirely. Recruitment was modeled with a mean term and recruitment deviations:
@@ -165,6 +166,16 @@ x_y \mid X_y \sim \mathcal{N}\left(X_y,\;\sigma_x^2\right).
 
 Recruitment in EM-2 was independent of Ecov and followed Eq. \eqref{eq:em0_rec}. In forecast years, EM-2 generated future Ecov states by continuing the fitted AR(1) process forward using Eq. \eqref{eq:em_ecov_ar1}. Although Ecov did not affect recruitment in EM-2, this continuation ensured that projected Ecov dynamics remained internally consistent with the EM’s assumed state-space structure.
 
+### EM-3 (Linear relationship between recruitment and temperature)
+
+EM-3 uses an existing option in whamMSE where a linear relationship between recrutiment-temperature is estimated. Recruitment is defined as: 
+
+\begin{equation}
+\log N_{1,y} = \log(\bar N_1) + \beta_RX_{t-\ell} + \epsilon_{1,y}, \epsilon_{1,y} \sim N(0, sigma_R^2)
+\label{eq:em3_rec}
+\end{equation}
+
+
 ## Harvest control rule and reference point calculation
 
 Management advice was based on an SPR reference point defined by \(F_{40\%}\), the fishing mortality that reduces spawning potential to 40% of its unfished level. The reference point \(F_{40\%}\) was calculated internally within each EM using the terminal 5-year averages of weight-at-age (WAA), maturity-at-age (MAA), selectivity, and natural mortality \(M\). That is, the EM computed \(F_{40\%}\) using biological and fishery inputs fixed at their most recent 5-year mean, which also served as the basis for projections of biological quantities in forecast years. The harvest control rule applied a precautionary buffer such that the target fishing mortality was:
@@ -210,6 +221,6 @@ We configured different values for each parameter with
 
 1. \(\sigma_{\text{NAA}} = \{0.2, 0.5, 1.0\}\), where 0.2 is realistic for most stocks in the Northeast and 1 is quite high and rather unrealistic
 2.  \(t_{\text{g}} = \{3\ \text{years}, 6\ \text{years}\}\)
-3.  \(w_{\text{opt}} = \{0.1, 1, 5\}\) where 0.1 is an extremely narrow temperature response curve and 5 is very generous and will give good recruitment responses even to temperatures far from optimal value.
+3.  \(w_{\text{opt}} = \{0.5, 1, 2k\}\) where 0.1 is an extremely narrow temperature response curve and 5 is very generous and will give good recruitment responses even to temperatures far from optimal value.
 
 
