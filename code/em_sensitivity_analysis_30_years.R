@@ -46,6 +46,8 @@ base_random_seed <- 853
 set.seed(base_random_seed)
 mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000)))
 model_name <- "BSB Ecov"
+n_feedback_years <- 30
+
 
 #### SENSITIVITY ANALYSIS SETTINGS ####
 # We will be looking at model variation from the following
@@ -70,7 +72,7 @@ sens_analysis_settings <- sens_analysis_settings %>% mutate(nid=row_number(), .b
 
 #### IF THIS IS A TEST RUN - YOU ONLY WANT TO RUN A COUPLE OF ROWS!!! ####
 # NOTE: ONLY USE FIVE ROWS BECAUSE THIS IS A TEST RUN
-sens_analysis_settings <- sens_analysis_settings %>% head(n=6)
+sens_analysis_settings <- sens_analysis_settings %>% head(n=2)
 
 #### EXTERNAL FUNCTIONS ####
 # Source reusable functions from `functions/reusable_functions.R`
@@ -122,7 +124,7 @@ if(DO_ANALYSIS){
 
       # NOTE: OM model ends in 2021 and EM starts in 2022
       # But the bottom temperature dataset goes until 2022
-      n_feedback_years <- 30
+      # n_feedback_years <- 30
 
       OMa  <- readRDS("models/OM_base.RDS")
       asap <- read_asap3_dat("data/north.dat")
@@ -143,8 +145,10 @@ if(DO_ANALYSIS){
 
       # for this test, force north BT deviations to 0 so all variation comes from Ecov_re
       # ecov$mean[,1] <- 0
-
-      ecov$year <- c(north_bt[,"year"], 2023:(2025+15))
+      # Get the final year
+      ecov_final_year <- max(north_bt[,"year"])
+      projection_years <- seq(ecov_final_year+1, ecov_final_year+n_feedback_years)
+      ecov$year <- c(north_bt[,"year"], projection_years)
 
       plot(ecov$year, ecov$mean[,1], type = "l", main = "Ecov mean (North BT)", xlab = "Year")
 
@@ -164,24 +168,26 @@ if(DO_ANALYSIS){
 
       year_start <- 1989
       year_end   <- 2021
-      MSE_years  <- 18
+      MSE_years  <- n_feedback_years
 
       hist_years <- length(year_start:year_end)
       total_years <- length(year_start:(year_end + MSE_years))
+      om_future_start_index <- hist_years+1
+      om_future_end_index <- hist_years+n_feedback_years
 
       # maturity
       user_maturity <- array(NA, dim = c(n_stocks, total_years, n_ages))
       user_maturity[, 1:hist_years, ] <- OMa$input$data$mature[1,,]
       for (i in (hist_years+1):(hist_years+MSE_years)) {
-        user_maturity[, i, ] <- OMa$input$data$mature[1, 33, , drop = FALSE]
+        user_maturity[, i, ] <- OMa$input$data$mature[1, hist_years, , drop = FALSE]
       }
 
 
       user_waa <- list()
-      user_waa$waa <- array(NA, dim = c(5, 33 + n_feedback_years, 8))
-      user_waa$waa[, 1:33, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]
-      for (i in 34:(36+15)) {
-        user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), 33, ]
+      user_waa$waa <- array(NA, dim = c(5, hist_years + n_feedback_years, 8))
+      user_waa$waa[, 1:hist_years, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]
+      for (i in om_future_start_index:om_future_end_index) {
+        user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), hist_years, ]
       }
       user_waa$waa_pointer_fleets   <- 1:2
       user_waa$waa_pointer_indices  <- 3:4
@@ -233,7 +239,7 @@ if(DO_ANALYSIS){
       catch_info_use <- info$catch_info
       index_info_use <- info$index_info
       F_info         <- info$F
-      F_info$F[1:33,] <- OMa$rep$Fbar[, 1:2]
+      F_info$F[1:hist_years,] <- OMa$rep$Fbar[, 1:2]
 
       #### 5. SELECTIVITY/M/NAA_re ####
       sel <- list(n_selblocks = 4,
@@ -325,12 +331,12 @@ if(DO_ANALYSIS){
       input_Ecov$par$log_N1 <- array(tmp, dim = c(1, 1, length(tmp)))
 
       # index sigma and Neff
-      input_Ecov$data$agg_index_sigma[1:33,] <- OMa$input$data$agg_index_sigma[,1:2]
-      input_Ecov$data$use_indices[1:33,]     <- OMa$input$data$use_indices[,1:2]
-      input_Ecov$data$use_index_paa[1:33,]   <- OMa$input$data$use_index_paa[,1:2]
+      input_Ecov$data$agg_index_sigma[1:hist_years,] <- OMa$input$data$agg_index_sigma[,1:2]
+      input_Ecov$data$use_indices[1:hist_years,]     <- OMa$input$data$use_indices[,1:2]
+      input_Ecov$data$use_index_paa[1:hist_years,]   <- OMa$input$data$use_index_paa[,1:2]
 
-      for (i in 34:(36+15)) {
-        input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[33,1:2, drop = FALSE]
+      for (i in om_future_start_index:om_future_end_index) {
+        input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[hist_years,1:2, drop = FALSE]
       }
 
       idx1 <- which(asap[[1]]$dat$use_index == 1)
@@ -338,7 +344,7 @@ if(DO_ANALYSIS){
       Neff1 <- do.call(cbind, lapply(idx1, function(i)
         asap[[1]]$dat$IAA_mats[[i]][, 12, drop = FALSE]))
       index_Neff <- Neff1
-      index_Neff <- rbind(index_Neff, index_Neff[rep(33,MSE_years), , drop = FALSE])
+      index_Neff <- rbind(index_Neff, index_Neff[rep(hist_years,MSE_years), , drop = FALSE])
       input_Ecov$data$index_Neff <- index_Neff
 
       input_Ecov <- whamMSE::update_input_index_info(
@@ -348,17 +354,17 @@ if(DO_ANALYSIS){
       )
 
       # catch sigma & Neff
-      input_Ecov$data$agg_catch_sigma[1:33,] <- OMa$input$data$agg_catch_sigma[,1:2]
-      input_Ecov$data$use_agg_catch[1:33,]   <- OMa$input$data$use_agg_catch[,1:2]
-      input_Ecov$data$use_catch_paa[1:33,]   <- OMa$input$data$use_catch_paa[,1:2]
+      input_Ecov$data$agg_catch_sigma[1:hist_years,] <- OMa$input$data$agg_catch_sigma[,1:2]
+      input_Ecov$data$use_agg_catch[1:hist_years,]   <- OMa$input$data$use_agg_catch[,1:2]
+      input_Ecov$data$use_catch_paa[1:hist_years,]   <- OMa$input$data$use_catch_paa[,1:2]
 
-      for (i in 34:(36+15)) {
-        input_Ecov$data$agg_catch_sigma[i,] <- OMa$input$data$agg_catch_sigma[33,1:2]
+      for (i in om_future_start_index:om_future_end_index) {
+        input_Ecov$data$agg_catch_sigma[i,] <- OMa$input$data$agg_catch_sigma[hist_years,1:2]
       }
 
       Neff1 <- asap[[1]]$dat$catch_Neff
       catch_Neff <- cbind(Neff1)
-      catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33,MSE_years), , drop = FALSE])
+      catch_Neff <- rbind(catch_Neff, catch_Neff[rep(hist_years,MSE_years), , drop = FALSE])
 
       input_Ecov$data$catch_Neff <- catch_Neff
 
@@ -437,7 +443,7 @@ if(DO_ANALYSIS){
       # IMPORTANT! #
       # We can also set 75% of F40% to be F default values in the feedback! So you have another BASELINE
       om_with_data <- update_om_fn(om_ecov, seed = seed, random = random)
-      om_ecov$parList$F_pars[34:(36+15),] = om_with_data$rep$log_SPR_FXSPR_static
+      om_ecov$parList$F_pars[om_future_start_index:om_future_end_index,] = om_with_data$rep$log_SPR_FXSPR_static
 
       om_with_data$input$data$agg_catch #simulated catch
       om_with_data$input$data$agg_indices #simulated index
@@ -493,7 +499,7 @@ if(DO_ANALYSIS){
       assess.interval <- mse_gap # Assessments occur every 3 or 6 years. Depends on the configuration
       base.years <- year_start:year_end
       terminal.year <- tail(base.years, 1)
-      last.year <- 2024+15
+      last.year <- terminal.year+n_feedback_years
       assess.years <- seq(terminal.year, last.year - assess.interval, by = assess.interval)
 
       # ggplot assess.years component
@@ -1053,241 +1059,3 @@ print(paste("Total execution time was", run_total_time_hours, "hours and",
             run_total_time_mins, "minutes and", run_total_time_secs,
             "seconds", sep=" "))
 beepr::beep(2)
-
-
-# Gather the model objects to a single list and name them
-mod_list <- list(mod1, mod2, mod3, mod4)
-names(mod_list) <- c("Model 1", "Model 2", "Model 3", "Model 4")
-mod_list_2 <- list(mod1, mod2, mod3, mod4)
-names(mod_list_2) <- c("Model 1", "Model 2", "Model 3", "Model 4")
-
-gather_mod_list <- list(mod_list, mod_list_2)
-names(gather_mod_list) <- c("List 1", "List 2")
-
-# Access the
-
-#### DISCARD EVERYTHING BELOW ####
-
-#### EXPERIMENTAL MINI CHUNK HERE ####
-# Get models into a list
-# Create a list of model objects
-mod_list <- list(mod_names=c("Model 1", "Model 2", "Model 3"))
-mod_list$models <- list(mod1, mod2, mod3)
-
-#### OPERATING MODEL - ABUNDANCE[SSB] ####
-plot(mod1$om$rep$SSB, type = "l", col = "red")
-lines(mod2$om$rep$SSB, type = "l", col = "blue")
-
-# Getting these into a nice tidyverse format
-mod1_om_ssb <- mod1$om$rep$SSB
-mod1_om_ssb <- cbind(mod1_om_ssb,model='Model 1')
-mod1_om_ssb <- cbind(ID = as.integer(1:nrow(mod1_om_ssb)), mod1_om_ssb)
-mod2_om_ssb <- mod2$om$rep$SSB
-mod2_om_ssb <- cbind(mod2_om_ssb,model='Model 2')
-mod2_om_ssb <- cbind(ID = as.integer(1:nrow(mod2_om_ssb)), mod2_om_ssb)
-mod3_om_ssb <- mod3$om$rep$SSB
-mod3_om_ssb <- cbind(mod3_om_ssb,model='Model 3')
-mod3_om_ssb <- cbind(ID = as.integer(1:nrow(mod3_om_ssb)), mod3_om_ssb)
-
-
-mod_om_ssb <- rbind(mod1_om_ssb, mod2_om_ssb, mod3_om_ssb)
-mod_om_ssb_df <- tibble::as_tibble(mod_om_ssb)
-mod_om_ssb_df <- mod_om_ssb_df %>% rename(year=ID) %>% mutate(year=as.integer(year)+1988)
-mod_om_ssb_df <- mod_om_ssb_df %>% rename(SSB=V2) %>% mutate(SSB=as.numeric(SSB))
-
-# Plot via ggplot
-ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) +
-  geom_line(alpha=1.0, linewidth=1) + facet_wrap(~model, nrow=2) +
-  scale_x_continuous(breaks=seq(1985,2040,5)) +
-  labs(color="Model") +
-  theme_bw() +
-  theme(axis.text.x=element_text(angle=60, vjust=1, hjust=1))
-
-# Plot via ggplot
-ggplot(mod_om_ssb_df, aes(year, SSB, color=as.factor(model))) +
-  geom_line(alpha=1.0, linewidth=1) +
-  labs(color="Model") +
-  theme_bw()
-
-
-#### PREDICTED CATCH -  ####
-# Fleet 1
-plot(mod1$om$rep$pred_catch[,1], type = "l", col = "red")
-lines(mod2$om$rep$pred_catch[,1], type = "l", col = "blue")
-
-# Fleet 2
-plot(mod1$om$rep$pred_catch[,2], type = "l", col = "red")
-lines(mod2$om$rep$pred_catch[,2], type = "l", col = "blue")
-
-#### ESTIMATION MODEL - ABUNDANCE[SSB] ####
-lines(mod1$em_full[[1]]$rep$SSB, col = "red")
-lines(mod2$em_full[[1]]$rep$SSB, col = "blue")
-lines(mod3$em_full[[1]]$rep$SSB, col = "purple")
-
-
-#### DIFFERENCE BETWEEN ESTIMATION MODELS ####
-mod1$em_full[[1]]$rep$SSB - mod2$em_full[[1]]$rep$SSB
-
-mod2$em_full[[1]]$parList$mean_rec_pars - mod1$em_full[[1]]$parList$mean_rec_pars
-mod2$em_full[[1]]$parList$Ecov_beta_R - mod1$em_full[[1]]$parList$Ecov_beta_R
-
-
-# NAA - Age class 1
-# EM vs. OM
-plot(mod1$om$rep$NAA[,,,1], type = "l")
-lines(mod1$em_full[[1]]$rep$NAA[,,,1], col = "red")
-
-# Fishing pressure
-plot(mod1$om$rep$Fbar[,1], type = "l")
-lines(mod1$em_full[[1]]$rep$Fbar[,1], col = "red")
-lines(mod2$em_full[[1]]$rep$Fbar[,1], col = "blue")
-lines(mod3$em_full[[1]]$rep$Fbar[,1], col = "green")
-
-plot(mod1$om$rep$Fbar[,2], type = "l")
-lines(mod1$em_full[[1]]$rep$Fbar[,2], col = "red")
-lines(mod2$em_full[[1]]$rep$Fbar[,2], col = "blue")
-lines(mod3$em_full[[1]]$rep$Fbar[,2], col = "green")
-
-plot(mod1$om$rep$Fbar[,3], type = "l")
-lines(mod1$em_full[[1]]$rep$Fbar[,3], col = "red")
-lines(mod2$em_full[[1]]$rep$Fbar[,3], col = "blue")
-lines(mod3$em_full[[1]]$rep$Fbar[,3], col = "green")
-
-
-plot(mod1$om$rep$Fbar[,4], type = "l")
-lines(mod1$em_full[[1]]$rep$Fbar[,4], col = "red")
-lines(mod2$em_full[[1]]$rep$Fbar[,4], col = "blue")
-lines(mod3$em_full[[1]]$rep$Fbar[,4], col = "green")
-
-# Predicted vs. estimated catch
-plot(mod1$om$rep$pred_catch[,1], type = "l")
-lines(mod1$em_full[[1]]$rep$pred_catch[,1], col = "red")
-lines(mod2$em_full[[1]]$rep$pred_catch[,1], col = "green")
-lines(mod3$em_full[[1]]$rep$pred_catch[,1], col = "blue")
-
-
-mod1$em_input[[1]]$par$Ecov_beta_R
-mod2$em_input[[1]]$par$Ecov_beta_R
-
-mod1$em_input[[1]]$par$Ecov_process_pars
-mod2$em_input[[1]]$par$Ecov_process_pars
-mod3$em_input[[1]]$par$Ecov_process_pars
-mod4$em_input[[1]]$par$Ecov_process_pars
-
-mod1$em_full[[1]]$parList$mean_rec_pars - mod2$em_full[[1]]$parList$mean_rec_pars
-mod1$em_full[[1]]$parList$logit_q - mod2$em_full[[1]]$parList$logit_q
-
-mod1$em_full[[1]]$sdrep
-mod2$em_full[[1]]$sdrep
-
-mod1$em_full[[1]]$parList$Ecov_beta_R
-mod2$em_full[[1]]$parList$Ecov_beta_R
-mod3$em_full[[1]]$parList$Ecov_beta_R
-mod4$em_full[[1]]$parList$Ecov_beta_R
-
-# Population correlation coefficient
-mod1$om$parList$trans_NAA_rho[,,1]
-mod1$em_full[[1]]$parList$trans_NAA_rho
-mod2$em_full[[1]]$parList$trans_NAA_rho
-mod3$em_full[[1]]$parList$trans_NAA_rho
-
-# Is recruitment connected to ecovariate?
-mod1$em_full[[1]]$input$data$Ecov_how_R
-mod2$em_full[[1]]$input$data$Ecov_how_R
-mod3$em_full[[1]]$input$data$Ecov_how_R
-
-# EM - Negative log likelihood
-mod1$em_full[[1]]$rep$nll
-mod2$em_full[[1]]$rep$nll
-mod3$em_full[[1]]$rep$nll
-
-plots_list <- lapply(1:10, function(i) {
-  ggplot(mtcars, aes(wt, mpg)) +
-    geom_point() +
-    ggtitle(paste("Plot", i))
-})
-
-# How to add plots to an existing list
-sample_plot <- ggplot(mtcars, aes(wt, mpg)) +
-  geom_point(color="red") +
-  ggtitle(paste("Plot", i))
-sample_plot_2 <- ggplot(mtcars, aes(wt, mpg)) +
-  geom_point(color="yellow") +
-  ggtitle(paste("Plot", i))
-
-plots_list_x <- list(sample_plot, sample_plot_2)
-plots_list_x <- append(plots_list_x, list(sample_plot))
-
-# Arrange and save the plots to a multi-page PDF (4 plots per page: 2 rows, 2 columns)
-pdf(here("plots","multi_page_gridExtra2.pdf"), width = 12, height = 8)
-marrangeGrob(plots_list_x, nrow = 2, ncol = 2)
-dev.off()
-
-
-#### DATAFRAME FOR STORING PARAMETER ESTIMATES AND DIFFERENCES ####
-# Required columns
-# 1. RUN_ID
-# 2. proc_error
-# 3. mse_gap
-# 4. gauss_width
-# 5. parameter
-# 6. OM or EM
-# 7. diff or raw_value
-# 8. desc - 'Show the equation here' or the model number
-# 9. value
-
-list_1 <- list(run_id=1, proc_error=0.1, mse_gap=3, gauss_width=0.1,
-               parameter="SSB",om_em="OM",
-               diff_or_raw="raw",desc="Model 1", value=2.5e10)
-
-list_2 <- list(run_id=2, proc_error=0.1, mse_gap=6, gauss_width=0.1,
-               parameter="SSB",om_em="OM",
-               diff_or_raw="diff",desc="Model 1 - Model 2", value=1.3e10)
-
-list_3 <- list(run_id=3, proc_error=0.1, mse_gap=rep(5,30), gauss_width=0.1,
-               parameter="SSB",om_em="OM",
-               diff_or_raw="raw",desc="Model 1 - Model 2", value=1.3e10)
-# NOTE: `as.data.frame(list_3)` works
-
-all_lists <- list(list_1, list_2)
-
-param_df <- do.call(rbind.data.frame, all_lists)
-
-# Binding lists of unequal length
-
-all_lists_2 <- list(list_1, list_2, list_3)
-
-# The `rbind.data.frame` call doesn't work on unequal lists
-param_df_2 <- do.call(rbind.data.frame, all_lists_2)
-
-# But data.table::rbindlist does!
-data.table::rbindlist(list(list_1, list_2, list_3), fill = TRUE)
-
-View(data.table::rbindlist(list(list_1, list_2, list_3), fill = TRUE))
-
-vec <- 1:18
-
-# Repeat each element of the vector three times
-result <- rep(vec, each = 3)
-
-# Print the result
-print(result)
-
-
-# Handling errors
-
-safe_log <- function(x) {
-  tryCatch(
-    expr = {
-      log(x)
-    },
-    error = function(e) {
-      message(paste("An error occurred in the code:", conditionMessage(e)))
-      return(NA) # Return NA in case of an error
-    }
-  )
-}
-
-# Example usage:
-print(safe_log(10))
-print(safe_log("a")) # This will trigger the error handler
