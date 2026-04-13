@@ -363,5 +363,169 @@ This might need a server to run properly.
 
 ## 03/31/2026 log
 
+Meeting with Cheng. Some questions I have for him. Meeting was recorded on Zoom for references.
+Check Documents/Zoom folder for the recording.
+
+1. Remove lines 377-379 from the code (Setting random effects for the Ecov)
+2. Need to make some modifications to Line 389, 390, because we haven't defined the future
+3. Insert a new line after Line 390 -> input_Ecov$par$Ecov_rec[65:XX] <- Ecov_re
+
+### Increasing flexibility of assessment/future projection years
+Editing `code/em_sensitivity_analysis.R`
+_Made a commit before the major changes - Hash is bdf64d1..02f7fee in the `dev` branch_
+
+1. Line 49 - New line. Inserted `n_feedback_years <- 30`. Everything stems from here.
+2. Line 125 - Removed `n_feedback_years <- 30`. It's now moved to Line 49. 
+3. Line 149 (Previously 116) - Previously `ecov$year <- c(north_bt[,"year"], 2023:(2025+15))`
+Now, I've changed it to the following code chunk
+```{r}
+      ecov_final_year <- max(north_bt[,"year"])
+      projection_years <- seq(ecov_final_year+1, ecov_final_year+n_feedback_years)
+      ecov$year <- c(north_bt[,"year"], projection_years)
+```
+Basically I've taken the last year from the temperature time series and made a vector for all the years 
+that we are projecting to and updated `ecov$year` using that.
+4. Line 171 - Changed `MSE_years  <- 18` to `MSE_years  <- n_feedback_years`
+5. Line 180 - Changed `user_maturity[, i, ] <- OMa$input$data$mature[1, 33, , drop = FALSE]` to `user_maturity[, i, ] <- OMa$input$data$mature[1, hist_years, , drop = FALSE]`
+6. Line 185 - Changed `user_waa$waa <- array(NA, dim = c(5, 33 + n_feedback_years, 8))` to `user_waa$waa <- array(NA, dim = c(5, hist_years + n_feedback_years, 8))`
+7. Line 186 - changed `user_waa$waa[, 1:33, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]` to `user_waa$waa[, 1:hist_years, ] <- OMa$input$data$waa[c(1,2,5,6,9), ,]`
+8. Lines 187, 188
+```{r}
+      for (i in 34:(36+15)) {
+        user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), 33, ]
+      }
+```
+**Changed to **
+```{r}
+      for (i in om_future_start_index:om_future_end_index) {
+        user_waa$waa[, i, ] <- OMa$input$data$waa[c(1,2,5,6,9), hist_years, ]
+      }
+```
+9. Line 242: Changed `F_info$F[1:33,] <- OMa$rep$Fbar[, 1:2]` to `F_info$F[1:hist_years,] <- OMa$rep$Fbar[, 1:2]`
+
+**Stopped at Line 332 for today**
+10. Lines 332 to 375
+```{r}
+
+      # index sigma and Neff
+      input_Ecov$data$agg_index_sigma[1:33,] <- OMa$input$data$agg_index_sigma[,1:2]
+      input_Ecov$data$use_indices[1:33,]     <- OMa$input$data$use_indices[,1:2]
+      input_Ecov$data$use_index_paa[1:33,]   <- OMa$input$data$use_index_paa[,1:2]
+
+      for (i in 34:(36+15)) {
+        input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[33,1:2, drop = FALSE]
+      }
+
+      idx1 <- which(asap[[1]]$dat$use_index == 1)
+
+      Neff1 <- do.call(cbind, lapply(idx1, function(i)
+        asap[[1]]$dat$IAA_mats[[i]][, 12, drop = FALSE]))
+      index_Neff <- Neff1
+      index_Neff <- rbind(index_Neff, index_Neff[rep(33,MSE_years), , drop = FALSE])
+      input_Ecov$data$index_Neff <- index_Neff
+
+      input_Ecov <- whamMSE::update_input_index_info(
+        input_Ecov,
+        agg_index_sigma = input_Ecov$data$agg_index_sigma,
+        index_Neff      = input_Ecov$data$index_Neff
+      )
+
+      # catch sigma & Neff
+      input_Ecov$data$agg_catch_sigma[1:33,] <- OMa$input$data$agg_catch_sigma[,1:2]
+      input_Ecov$data$use_agg_catch[1:33,]   <- OMa$input$data$use_agg_catch[,1:2]
+      input_Ecov$data$use_catch_paa[1:33,]   <- OMa$input$data$use_catch_paa[,1:2]
+
+      for (i in 34:(36+15)) {
+        input_Ecov$data$agg_catch_sigma[i,] <- OMa$input$data$agg_catch_sigma[33,1:2]
+      }
+
+      Neff1 <- asap[[1]]$dat$catch_Neff
+      catch_Neff <- cbind(Neff1)
+      catch_Neff <- rbind(catch_Neff, catch_Neff[rep(33,MSE_years), , drop = FALSE])
+
+      input_Ecov$data$catch_Neff <- catch_Neff
+
+      input_Ecov <- update_input_catch_info(
+        input_Ecov,
+        agg_catch_sigma = input_Ecov$data$agg_catch_sigma,
+        catch_Neff      = input_Ecov$data$catch_Neff
+      )
+
+```
+Changed to 
+```{r}
+
+      # index sigma and Neff
+      input_Ecov$data$agg_index_sigma[1:hist_years,] <- OMa$input$data$agg_index_sigma[,1:2]
+      input_Ecov$data$use_indices[1:hist_years,]     <- OMa$input$data$use_indices[,1:2]
+      input_Ecov$data$use_index_paa[1:hist_years,]   <- OMa$input$data$use_index_paa[,1:2]
+
+      for (i in om_future_start_index:om_future_end_index) {
+        input_Ecov$data$agg_index_sigma[i,] <- OMa$input$data$agg_index_sigma[hist_years,1:2, drop = FALSE]
+      }
+
+      idx1 <- which(asap[[1]]$dat$use_index == 1)
+
+      Neff1 <- do.call(cbind, lapply(idx1, function(i)
+        asap[[1]]$dat$IAA_mats[[i]][, 12, drop = FALSE]))
+      index_Neff <- Neff1
+      index_Neff <- rbind(index_Neff, index_Neff[rep(hist_years,MSE_years), , drop = FALSE])
+      input_Ecov$data$index_Neff <- index_Neff
+
+      input_Ecov <- whamMSE::update_input_index_info(
+        input_Ecov,
+        agg_index_sigma = input_Ecov$data$agg_index_sigma,
+        index_Neff      = input_Ecov$data$index_Neff
+      )
+
+      # catch sigma & Neff
+      input_Ecov$data$agg_catch_sigma[1:hist_years,] <- OMa$input$data$agg_catch_sigma[,1:2]
+      input_Ecov$data$use_agg_catch[1:hist_years,]   <- OMa$input$data$use_agg_catch[,1:2]
+      input_Ecov$data$use_catch_paa[1:hist_years,]   <- OMa$input$data$use_catch_paa[,1:2]
+
+      for (i in om_future_start_index:om_future_end_index) {
+        input_Ecov$data$agg_catch_sigma[i,] <- OMa$input$data$agg_catch_sigma[hist_years,1:2]
+      }
+
+      Neff1 <- asap[[1]]$dat$catch_Neff
+      catch_Neff <- cbind(Neff1)
+      catch_Neff <- rbind(catch_Neff, catch_Neff[rep(hist_years,MSE_years), , drop = FALSE])
+
+      input_Ecov$data$catch_Neff <- catch_Neff
+
+      input_Ecov <- update_input_catch_info(
+        input_Ecov,
+        agg_catch_sigma = input_Ecov$data$agg_catch_sigma,
+        catch_Neff      = input_Ecov$data$catch_Neff
+      )
+
+```
+11. Line 446 changed from `om_ecov$parList$F_pars[34:(36+15),] = om_with_data$rep$log_SPR_FXSPR_static` to 
+`om_ecov$parList$F_pars[om_future_start_index:om_future_end_index,] = om_with_data$rep$log_SPR_FXSPR_static`
+12. Line 502 changed from `last.year <- 2024+15` to `last.year <- terminal.year+n_feedback_years`. **Check this again. Not sure about it!!!**
+
+
+**IMPORTANT: Might need to move the tryCatch from the larger loop to the seed loop**
+
+
+## 04/06/2026 log
+
+We also need to make a single model + multiple iteration seed run code available here
+
+Change made to `code/em_sensitivity_analysis_30_years.R`. Changed mean recruitment in operating model from exp(10.5) to exp(12)
+
+John also wanted recruitment deviates - mod1$em_full[[1]]$rep$NAA_devs
+For the operating model - mod1$om$rep$NAA_devs_1
+
+## 04/13/2026 log
+
+Initiating a model run with the following parameters. Saved to `2026-04-13_02-13-32`
+
+1. iterations = 10
+2. years =15
+3. $\sigma_{NAA}$ = 0.2
+4. $t_g$ = {3 years, 6 years}
+5. $w_\text{opt}$ = 0.5
+
 
 
