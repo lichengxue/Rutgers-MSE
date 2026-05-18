@@ -43,7 +43,7 @@ run_env <- run_env_opts[1]
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
 # NOTE: NOT USING THESE SETTINGS FOR THE SENSITIVITY ANALYSIS
-iterations <- 1
+iterations <- 4
 base_random_seed <- 853
 set.seed(base_random_seed)
 mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000)))
@@ -82,6 +82,9 @@ sens_analysis_settings <- sens_analysis_settings %>% mutate(nid=row_number(), .b
 # Source reusable functions from `functions/reusable_functions.R`
 source(here("functions","reusable_functions.R"))
 
+# Initialize 'folder_name' here so that it's captured by parallelization
+folder_name <- ""
+
 SAVE_MODEL <- TRUE
 if(SAVE_MODEL){
   # Create a folder for saving all the data and run information
@@ -97,6 +100,9 @@ if(SAVE_MODEL){
   # Folder for diagnostics
   folder_path_diagnostics <- here("models","sensitivity_analysis",folder_name,"diagnostics")
   dir.create(folder_path_diagnostics, recursive = TRUE, showWarnings = FALSE)
+  # Folder for error, warning logs
+  folder_path_logs <- here("models","sensitivity_analysis",folder_name,"logs")
+  dir.create(folder_path_logs, recursive = TRUE, showWarnings = FALSE)
 }
 
 #### DO THE SENSITIVITY ANALYSIS OR NOT? ####
@@ -111,7 +117,8 @@ DO_ANALYSIS = TRUE
 # Capture the here() root path ONCE before launching workers
 project_root <- here::here()
 
-cl <- makeCluster(detectCores() - 1)  # leave one core free
+# Initialize parallelization
+cl <- makeCluster(detectCores() - 1, outfile=here(folder_path_logs,"logs.txt"))  # leave one core free
 registerDoParallel(cl)
 
 # Export packages to workers
@@ -132,6 +139,7 @@ clusterExport(cl, varlist = c(
   "n_feedback_years",
   "folder_path",
   "folder_path_diagnostics",
+  "folder_path_logs",
   "project_root",
   "SAVE_MODEL"
 ))
@@ -142,7 +150,7 @@ clusterEvalQ(cl, {
   # here::i_am(".")  # help here() find the root
 })
 
-
+# Do you want to do the analysis?
 if(DO_ANALYSIS){
   for(j in 1:nrow(sens_analysis_settings)){
     j_val <- j
@@ -1293,16 +1301,16 @@ if(DO_ANALYSIS){
           # folder_path <- here("models","sensitivity_analysis",folder_name,"models")
           # # Create a folder. Suppress warnings and allow recursive folders to be created
           # dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
-          saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"iter_id_",iter_id,"mod_1",".RDS",sep="")))
-          saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"iter_id_",iter_id,"mod_2",".RDS",sep="")))
-          saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"iter_id_",iter_id,"mod_3",".RDS",sep="")))
+          saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"iter_id_",iter_id,"_mod_1",".RDS",sep="")))
+          saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"iter_id_",iter_id,"_mod_2",".RDS",sep="")))
+          saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"iter_id_",iter_id,"_mod_3",".RDS",sep="")))
           # for(iter in seq(iterations)){
           #   saveRDS(model_list[iter], here(folder_path,paste("model_run_",iter,".RDS",sep="")))
           # }
           # Write in model results
-          write_csv(em_ssb_dif_table, here(folder_path_diagnostics,paste("diagnostics_ssb_diff_",run_id,"iter_id",iter_id,".csv",sep="")))
-          write_csv(rec_par_df, here(folder_path_diagnostics,paste("diagnostics_rec_par_diff_",run_id,"iter_id",iter_id,".csv",sep="")))
-          write_csv(ecov_beta_df, here(folder_path_diagnostics,paste("ecov_beta_diff_",run_id,"iter_id",iter_id,".csv",sep="")))
+          # write_csv(em_ssb_dif_table, here(folder_path_diagnostics,paste("diagnostics_ssb_diff_",run_id,"iter_id",iter_id,".csv",sep="")))
+          # write_csv(rec_par_df, here(folder_path_diagnostics,paste("diagnostics_rec_par_diff_",run_id,"iter_id",iter_id,".csv",sep="")))
+          # write_csv(ecov_beta_df, here(folder_path_diagnostics,paste("ecov_beta_diff_",run_id,"iter_id",iter_id,".csv",sep="")))
           print(paste("Models saved for Run",run_id,"and seed: ",seed,sep=" "))
           beepr::beep(3)
         }
@@ -1327,9 +1335,9 @@ if(DO_ANALYSIS){
           # folder_path <- here("models","sensitivity_analysis",folder_name,"models")
           # # Create a folder. Suppress warnings and allow recursive folders to be created
           # dir.create(folder_path, recursive = TRUE, showWarnings = FALSE)
-          saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"_iter_id_",iter_id,"_mod_1",".RDS",sep="")))
-          saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"_iter_id_",iter_id,"_mod_2",".RDS",sep="")))
-          saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"_iter_id_",iter_id,"_mod_3",".RDS",sep="")))
+          saveRDS(mod1, here(folder_path,paste("sens_run_",run_id,"_iter_id_",iter_id,"_error_out_mod_1",".RDS",sep="")))
+          saveRDS(mod2, here(folder_path,paste("sens_run_",run_id,"_iter_id_",iter_id,"_error_out_mod_2",".RDS",sep="")))
+          saveRDS(mod3, here(folder_path,paste("sens_run_",run_id,"_iter_id_",iter_id,"_error_out_mod_3",".RDS",sep="")))
           print(paste("Models saved for Run",run_id,"and seed: ",seed,sep=" "))
           print("IMPORTANT: This run ran into a critical error, so watchout for incomplete model objects!")
           beepr::beep(3)
