@@ -2,7 +2,7 @@
 #
 #                 Management Strategy Evaluation (MSE)
 #           Black Sea Bass (BSB) with Environmental Drivers
-#                       SENSITIVITY ANALYSIS - FULLY PARALLELIZED
+#              SENSITIVITY ANALYSIS - FULLY PARALLELIZED
 #
 #
 # Author(s): RMWJ Bandara, Chengxue Li
@@ -43,7 +43,7 @@ run_env <- run_env_opts[1]
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
 # NOTE: NOT USING THESE SETTINGS FOR THE SENSITIVITY ANALYSIS
-iterations <- 4
+iterations <- 8 # This is the number of parallel realizations that will run
 base_random_seed <- 853
 set.seed(base_random_seed)
 mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000)))
@@ -117,8 +117,18 @@ DO_ANALYSIS = TRUE
 # Capture the here() root path ONCE before launching workers
 project_root <- here::here()
 
+#### PARALLELIZATION ####
+# Do you want to maximize performance? If yes, use all but one core to run the code
+# If not, use 4 concurrent cores
+max_performance <- TRUE
+use_cores <- NA
+if(max_performance){
+  use_cores <- parallel::detectCores() - 1
+} else{
+  use_cores <- 4
+}
 # Initialize parallelization
-cl <- makeCluster(detectCores() - 1, outfile=here(folder_path_logs,"logs.txt"))  # leave one core free
+cl <- makeCluster(use_cores, outfile=here(folder_path_logs,"logs.txt"))  # leave one core free
 registerDoParallel(cl)
 
 # Export packages to workers
@@ -763,8 +773,6 @@ sens_analysis_to_csv <- sens_analysis_to_csv %>% mutate(run_id=rep(1:total_comb_
 sens_analysis_to_csv <- sens_analysis_to_csv %>% mutate(model_path=here(folder_path,paste("sens_run_",run_id,"_",model,".RDS",sep="")))
 folder_path <- here("models","sensitivity_analysis",folder_name)
 write_csv(sens_analysis_to_csv, here(folder_path, "all_model_settings.csv"))
-
-# Save the 
 
 print("Done with the whole sensitivity run")
 run_end_time <- Sys.time()
