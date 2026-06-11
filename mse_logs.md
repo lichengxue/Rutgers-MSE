@@ -527,5 +527,86 @@ Initiating a model run with the following parameters. Saved to `2026-04-13_02-13
 4. $t_g$ = {3 years, 6 years}
 5. $w_\text{opt}$ = 0.5
 
+*"Total execution time was 5 hours and 19 minutes and 42 seconds"*
 
 
+## 04/14/2026 log
+
+Regarding issues with convergence when setting NAA random effects process error to very low values.
+What happens with the convergence issues for Model 3 even though the parameters are fixed?
+The estimator is having trouble getting to such a low boundary with the other parameters.
+
+Link to some example code for parallelization and visualizing multiple models - 
+https://lichengxue.github.io/SPASAM.MSE/Performance-Analysis-Tools.html
+
+
+## 04/21/2026 log
+
+To do list for 04/21/2026
+
+1. Set up some temperature scenarios for 
+
+Working on the following files - `scratch/parallel_computations.R`, `scratch/environmental_projections`
+
+## 04/28/2026 log
+
+1. Make the plots for the true and estimated values between the models
+
+## 05/16/2026 log
+
+Installing `SPASAM.MSE` - devtools::install_github(
+  "lichengxue/SPASAM.MSE",
+  dependencies = FALSE
+)
+Added 'do.brps=TRUE', to code/parallelized_code_sensitivity_run.R in the `loop_through_fn` function
+
+NOTE: Cheng said to include code to make sure that random seeds are not generated
+
+Need to talk to John about the following
+1. Duration of the length of the feedback period (longer is better: 30-50 years)
+2. Historical temperature trends and future temperature scenarios
+
+## 05/19/2026 to current log
+
+Ran the model for an estimation period of 15 years at 20 iterations - Tooks 10 minutes 41 seconds
+Ran the model for an estimation period of 50 years at 8 iterations (2026-05-21_09-20-25) - Took 39 minutes and 0 seconds
+
+Made a new file to introduce temperature trends and set new hypothetical temperature optima
+
+Set the following
+1. `input_Ecov$par$Topt_rec` = 1.5, Width was set at 1
+2. Removed the cosine varying random effects that we set in initial models
+3. 
+
+
+## 05/22/2026 log
+
+- Use the following updated instructions to uninstall and reinstall `wham`, `whamMSE`, and `SPASAM.MSE`
+from now on.
+  - `remove.packages("wham")`
+  - `remove.packages("whamMSE")`
+  - `remove.packages("SPASAM.MSE")`
+  - `remotes::install_github("lichengxue/wham@Gaussian_test")`
+  - `remotes::install_github("lichengxue/whamMSE@Projection-MSE")`
+  - `devtools::install_github("lichengxue/SPASAM.MSE", dependencies = FALSE)`
+  
+  
+## 05/26/2026 log
+
+*IMPORTANT* - Caught something important in the code. Estimation model doesn't set the 
+PercentFXSPR to 75
+Lines 516 of code/parallelized_historic_run.R and similar in code/parallelized_code_sensitivity_run.R is a new addition
+`R om_ecov$input$percentFXSPR <- 75 # This is new [2026-05-26]`
+
+## 06/11/2026 log
+
+Working on Stephen's problem. Ran different configurations of this model varying the following parameters.  
+The problem is that there isn't enough variation 
+
+1. $\beta_R$ - `Ecov_beta_R`
+2. $\text{log}NAA_{\sigma}$ - `log_NAA_sigma`
+3. $\sigma$ - `sigma_vals`
+
+An output plot resulting from different configurations is shown below.
+
+![alt text](https://github.com/lichengxue/Rutgers-MSE/blob/dev/plots/potts-analysis/potts_outputs.png)
