@@ -44,7 +44,7 @@ run_env <- run_env_opts[1]
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
 # NOTE: NOT USING THESE SETTINGS FOR THE SENSITIVITY ANALYSIS
-iterations <- 8 # This is the number of parallel realizations that will run
+iterations <- 12 # This is the number of parallel realizations that will run
 base_random_seed <- 853
 set.seed(base_random_seed)
 # mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000))) # Standard method for deriving the seeds
@@ -65,7 +65,7 @@ random_seeds_df <- data.frame(n_seed=mse_random_seeds) %>% mutate(nid=row_number
 
 proc_error_v <- c(0.2) # Process error for NAA random effects. We keep a low value here to see that allows us to see difference in model performance
 mse_gaps_v <- c(6) # Time between assessments for MSE
-gauss_width_v <- c(1) # Width of the gaussian relationship (Wider = Less sensitive to optimal temperature)
+gauss_width_v <- c(2) # Width of the gaussian relationship (Wider = Less sensitive to optimal temperature)
 total_comb_no <- length(proc_error_v)*length(mse_gaps_v)*length(gauss_width_v)
 
 # Use `crossing` function from tidyr to create a dataframe of all the settings in the
@@ -122,12 +122,12 @@ project_root <- here::here()
 #### PARALLELIZATION ####
 # Do you want to maximize performance? If yes, use all but one core to run the code
 # If not, use 4 concurrent cores
-max_performance <- TRUE
+max_performance <- FALSE
 use_cores <- NA
 if(max_performance){
   use_cores <- parallel::detectCores() - 1
 } else{
-  use_cores <- 4
+  use_cores <- 6
 }
 # Initialize parallelization
 cl <- makeCluster(use_cores, outfile=here(folder_path_logs,"logs.txt"))  # leave one core free
@@ -379,7 +379,7 @@ if(DO_ANALYSIS){
         temp_vec <- input_Ecov$data$Ecov_obs[, temp_col]
         
         # WE need to specify clearly
-        input_Ecov$par$Topt_rec      <- 1.5          # peak at 1.5
+        input_Ecov$par$Topt_rec      <- 0          # peak at 0
         #### SENSITIVITY ANALYSIS POINT 2 ####
         input_Ecov$par$log_width_rec <- log(gauss_width)     # width whatever we set
         n_stocks <- input_Ecov$data$n_stocks
@@ -513,6 +513,7 @@ if(DO_ANALYSIS){
         # IMPORTANT! #
         # We can also set 75% of F40% to be F default values in the feedback! So you have another BASELINE
         om_ecov$input$par$F_pars[om_future_start_index:om_future_end_index,] = log(exp(c(-1.167205, -1.167205))*0.75)
+        om_ecov$input$percentFXSPR <- 75 # This is new [2026-05-26]
         om_with_data <- update_om_fn(om_ecov, seed = seed, random = random)
         # om_ecov$parList$F_pars[om_future_start_index:om_future_end_index,] = om_with_data$rep$log_SPR_FXSPR_static
         
