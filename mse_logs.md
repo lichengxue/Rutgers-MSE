@@ -601,10 +601,10 @@ Lines 516 of code/parallelized_historic_run.R and similar in code/parallelized_c
 ## 06/11/2026 log
 
 Working on Stephen's problem. Ran different configurations of this model varying the following parameters.  
-The problem is that there isn't enough variation 
+The problem is that there isn't enough variation between recruitment (top panel in the plots).
 
 1. $\beta_R$ - `Ecov_beta_R`
-2. $\text{log}\(NAA\)_{\sigma}$ - `log_NAA_sigma`
+2. $\text{log}NAA_{\sigma}$ - `log_NAA_sigma`
 3. $\sigma$ - `sigma_vals`
 
 An output plot resulting from different configurations is shown below.
