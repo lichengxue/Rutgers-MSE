@@ -604,7 +604,7 @@ Working on Stephen's problem. Ran different configurations of this model varying
 The problem is that there isn't enough variation 
 
 1. $\beta_R$ - `Ecov_beta_R`
-2. $\text{log}NAA_{\sigma}$ - `log_NAA_sigma`
+2. $\text{log}\(NAA\)_{\sigma}$ - `log_NAA_sigma`
 3. $\sigma$ - `sigma_vals`
 
 An output plot resulting from different configurations is shown below.
