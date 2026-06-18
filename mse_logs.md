@@ -610,3 +610,11 @@ The problem is that there isn't enough variation between recruitment (top panel 
 An output plot resulting from different configurations is shown below.
 
 ![alt text](https://github.com/lichengxue/Rutgers-MSE/blob/dev/plots/potts-analysis/potts_outputs.png)
+
+
+## 06/18/2026 log
+
+Found a major error in the projection code where the projected temperatures are not applied and 
+future temperatures are set to zero. This has been fixed but not implemented in 
+`code/parallelized_historic_run.R` yet.
+
