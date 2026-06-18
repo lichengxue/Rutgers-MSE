@@ -44,7 +44,7 @@ run_env <- run_env_opts[1]
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
 # NOTE: NOT USING THESE SETTINGS FOR THE SENSITIVITY ANALYSIS
-iterations <- 12 # This is the number of parallel realizations that will run
+iterations <- 50 # This is the number of parallel realizations that will run
 base_random_seed <- 853
 set.seed(base_random_seed)
 # mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000))) # Standard method for deriving the seeds
