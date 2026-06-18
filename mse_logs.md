@@ -618,3 +618,13 @@ Found a major error in the projection code where the projected temperatures are 
 future temperatures are set to zero. This has been fixed but not implemented in 
 `code/parallelized_historic_run.R` yet.
 
+To be done (Immediately):
+
+1. Need to incorporate metadata on `iterations` to the log files.
+2. Need to calculate convergence rates at a global scale as well as for each model type and configuration
+
+To be done (Down the road):
+
+1. Ability to merge multiple model runs while accounting for duplicate seeds so that a total of at least 
+100 seed outputs can be prepared for final analysis and manuscript submission.
+
