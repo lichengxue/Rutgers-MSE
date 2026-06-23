@@ -7,6 +7,7 @@
 #
 # Author(s): RMWJ Bandara, Chengxue Li
 # Date: 2026/05/12
+# Last updated: 2026/06/23
 # Runtime environment: MacOS Sequoia 15.5 on M-chip Macbook Pro, R version 4.4.1
 #
 # NOTE: This code is now capable of running in parallel on a local or server setting
@@ -44,13 +45,13 @@ run_env <- run_env_opts[1]
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
 # NOTE: NOT USING THESE SETTINGS FOR THE SENSITIVITY ANALYSIS
-iterations <- 6 # This is the number of parallel realizations that will run
+iterations <- 24 # This is the number of parallel realizations that will run
 base_random_seed <- 853
 set.seed(base_random_seed)
 # mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000))) # Standard method for deriving the seeds
 mse_random_seeds <- sample(1:1e6, size=iterations, replace= FALSE) # New method for deriving seeds accounting for duplicates
 model_name <- "BSB Ecov"
-n_feedback_years <- 30
+n_feedback_years <- 12
 
 # Make the seeds into a dataframe and save
 random_seeds_df <- data.frame(n_seed=mse_random_seeds) %>% mutate(nid=row_number(), .before=1)
@@ -127,7 +128,7 @@ use_cores <- NA
 if(max_performance){
   use_cores <- parallel::detectCores() - 1
 } else{
-  use_cores <- 6
+  use_cores <- 8
 }
 # Initialize parallelization
 cl <- makeCluster(use_cores, outfile=here(folder_path_logs,"logs.txt"))  # leave one core free
@@ -150,6 +151,7 @@ clusterExport(cl, varlist = c(
   "random_seeds_df",
   "n_feedback_years",
   "folder_path",
+  "folder_path_plots",
   "folder_path_diagnostics",
   "folder_path_logs",
   "project_root",
@@ -216,7 +218,9 @@ if(DO_ANALYSIS){
         projection_years <- seq(ecov_final_year+1, ecov_final_year+n_feedback_years)
         ecov$year <- c(north_bt[,"year"], projection_years)
         
+        png(here(folder_path_plots, paste(run_id,"_",iter_id,"_ecov_year_initial_plot.png", sep="")), width=600, height=600)
         plot(ecov$year, ecov$mean[,1], type = "l", main = "Ecov mean (North BT)", xlab = "Year")
+        dev.off()
         
         # obs error for Ecov
         ecov$logsigma           <- "est_1"
@@ -441,53 +445,44 @@ if(DO_ANALYSIS){
         )
         
         #### 9. FORCE Ecov_re pattern: -2 to +2, 1989-2023 ####
-        Ecov_re <- OMa$parList$Ecov_re[,1, drop = FALSE]
+        #### Ecov_re pattern for 2024 onward ####
         
-        # Test Only Start Here
-        n <- length(Ecov_re)
-        # n <- 100 # Delete this
+        # Historical Ecov_re, e.g. 1959–2023
+        Ecov_re <- OMa$parList$Ecov_re[, 1, drop = FALSE]
         
-        # Changing this to be a rising linear trend of 0.04 with an error around it
-        ecov_proj_error <- rnorm(n=n,mean=0, sd=0.5) # Error around the rising trend
-        Ecov_re[,] <- 0.04*seq(1,n) + ecov_proj_error
-        # Ecov_re[,] <- cos(seq(pi, 3*pi, length.out = n))
-        Ecov_re
-        plot(Ecov_re, type = "l")
-        # End here
+        # Total number of Ecov_re rows in the projection input
+        n_total <- nrow(input_Ecov$par$Ecov_re)
         
-        ny      <- nrow(Ecov_re)
+        # Historical length
+        n_hist <- nrow(Ecov_re)
         
-        yrs <- ecov$year      # 1959–2025, length 67
+        # Projection rows: 2024 onward until the end
+        proj_idx <- (n_hist + 1):n_total
         
-        # Year indices for 1989–2023 (should be 35 yrs)
-        idx <- which(yrs >= 1989 & yrs <= 2023)
+        # Number of projection years
+        n_proj <- length(proj_idx)
         
-        # Start with zeros, then fill desired segment
-        input_Ecov$par$Ecov_re[1:64,] <- Ecov_re
+        # First, fill historical Ecov_re
+        input_Ecov$par$Ecov_re[1:n_hist, 1] <- Ecov_re[, 1]
         
-        # Do not simulate Ecov_re – use the values above
+        # Then force increasing trend for 2024 onward
+        ecov_proj_error <- rnorm(n = n_proj, mean = 0, sd = 0.5)
+        
+        input_Ecov$par$Ecov_re[proj_idx, 1] <- 0.04 * seq_len(n_proj) + ecov_proj_error
+        
+        png(here(folder_path_plots, paste(run_id,"_",iter_id,"_ecov_re.png", sep="")), width=600, height=600)
+        plot(input_Ecov$par$Ecov_re, type = "l")
+        dev.off()
+        
+        # Do not simulate Ecov_re, use the values above
         input_Ecov$data$do_simulate_Ecov_re <- 0
         
-        # Remove Ecov_re from the list of random effects TMB will estimate
+        yrs <- ecov$year  
+        
+        # Remove Ecov_re from random effects
         if ("Ecov_re" %in% input_Ecov$random) {
           input_Ecov$random <- input_Ecov$random[input_Ecov$random != "Ecov_re"]
         }
-        
-        # par <- input_Ecov$par
-        # map <- input_Ecov$map
-        #
-        # cat("In par not in map:\n"); print(setdiff(names(par), names(map)))
-        # cat("In map not in par:\n"); print(setdiff(names(map), names(par)))
-        #
-        # shared <- intersect(names(par), names(map))
-        # bad_len <- shared[sapply(shared, function(nm) length(par[[nm]]) != length(map[[nm]]))]
-        # if(length(bad_len)) {
-        #   print(data.frame(
-        #     name = bad_len,
-        #     par_len = sapply(bad_len, function(nm) length(par[[nm]])),
-        #     map_len = sapply(bad_len, function(nm) length(map[[nm]]))
-        #   ))
-        # }
         
         #### 10. BUILD OM, REMOVE Ecov_re FROM UNFITTED OM, PLUG IN OUR NAA rho ####
         unfitted_om <- fit_wham(input_Ecov, do.fit = FALSE, do.brps = FALSE,
@@ -530,15 +525,16 @@ if(DO_ANALYSIS){
         yrs_rec <- year_start:(year_start + nyr - 1)
         
         # par(mfrow = c(2,1), mar = c(4,4,2,1))
-        
+        png(here(folder_path_plots, paste(run_id,"_",iter_id,"_temp_series.png", sep="")), width=600, height=600)
         plot(yrs, T_series, type = "l", xlab = "Year", ylab = "Ecov_x (North BT)",
              main = "Ecov_x (North BT) with -2 → +2 ramp, 1989–2023")
         abline(v = c(1989, 2023), lty = 2, col = "grey")
+        dev.off()
         
+        png(here(folder_path_plots, paste(run_id,"_",iter_id,"_rec_time_series.png", sep="")), width=600, height=600)
         plot(yrs_rec, rec1, type = "l", xlab = "Year", ylab = "Recruitment (stock 1)",
              main = "Recruitment vs Gaussian temperature effect")
-        
-        par(mfrow = c(1,1))
+        dev.off()
         
         # Realized recruitment / age-1 abundance
         rec1_obs <- om_with_data$rep$NAA[1, 1, , 1]
@@ -549,19 +545,16 @@ if(DO_ANALYSIS){
         nyr <- length(rec1_obs)
         yrs_rec <- year_start:(year_start + nyr - 1)
         
+        png(here(folder_path_plots, paste(run_id,"_",iter_id,"_realized_vs_pred_recruitment.png", sep="")), width=600, height=600)
+        par(mfrow = c(1,1))
         plot(yrs_rec, rec1_obs, type = "l", lwd = 1,
              xlab = "Year", ylab = "Recruitment (stock 1, region 1, age 1)",
              main = "Realized vs model-predicted recruitment")
-        
         lines(yrs_rec, rec1_pred, col = "red", lwd = 2)
-        
         legend("topright",
                legend = c("Realized recruitment", "Predicted recruitment"),
                col = c("black", "red"), lty = 1, bty = "n")
-        
-        # Convert these into nicer ggplots
-        # Temperature over time
-        
+        dev.off()
         
         #### 12. SET HARVEST CONTROL RULE (HCR) ####
         # Specify the Harvest Control Rule (HCR)
@@ -783,6 +776,11 @@ sens_analysis_to_csv <- sens_analysis_to_csv %>% mutate(run_id=rep(1:total_comb_
 sens_analysis_to_csv <- sens_analysis_to_csv %>% mutate(model_path=here(folder_path,paste("sens_run_",run_id,"_",model,".RDS",sep="")))
 folder_path <- here("models","sensitivity_analysis",folder_name)
 write_csv(sens_analysis_to_csv, here(folder_path, "all_model_settings.csv"))
+
+# Write model configurations
+model_configs <- data.frame(config=c("iterations","base_random_seed","feedback_years"),
+                            val=c(iterations, base_random_seed, n_feedback_years))
+write_csv(model_configs, here(folder_path, "model_configs.csv"))
 
 print("Done with the whole sensitivity run")
 run_end_time <- Sys.time()
