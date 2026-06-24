@@ -620,11 +620,43 @@ future temperatures are set to zero. This has been fixed but not implemented in
 
 To be done (Immediately):
 
-1. Need to incorporate metadata on `iterations` to the log files.
-2. Need to calculate convergence rates at a global scale as well as for each model type and configuration
+1. Need to incorporate metadata on `iterations` to the log files [x]
+2. Need to calculate convergence rates at a global scale as well as for each model type and configuration []
 
 To be done (Down the road):
 
 1. Ability to merge multiple model runs while accounting for duplicate seeds so that a total of at least 
 100 seed outputs can be prepared for final analysis and manuscript submission.
+
+## 06/23/2026 log
+
+Reinstalled `SPASAM.MSE` package to check whether the `plot_mse_output()` function works now.
+*_It works!_*
+
+Moved the following files from `code/` to `scratch/`
+
+- `2026_04_07_copy_em_sensitivity_analysis_30_years.R`
+- `2026_04_21_copy_em_sensitivity_analysis_30_years.R`
+- `2026_06_18_copy_em_sensitivity_analysis_30_years.R`
+- `em_sensitivity_analysis_30_years.R`
+- `em_sensitivity_analysis.R`
+
+
+## 06/24/2026 log
+
+Ran several models. Check `model_runs.md` for detailed notes on those.
+
+*IMPORTANT*: Fixed something in the code at `code/parallelized_historic_runs.R`. Future temperature projections initiated 
+at 0 (historical mean) instead of the last recorded temperature. This is fixed now. The image below shows the result of the fix 
+in detail.
+
+<p align="center">
+  <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/main/images/ecov_re_fix_for_github_notes.png.png" />
+  <br>
+  Figure 1 - Fix implemented on how future temperature projections are incorporated into the timeseries
+</p>
+
+
+
+
 
