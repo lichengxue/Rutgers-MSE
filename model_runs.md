@@ -7,7 +7,7 @@ _This document holds all information on production level model runs_
 Ran `parallelized_historic_run.R` for the temperature optima and trend configurations.
 
 1. Temperature trend: $0 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$
-2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$
+2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.5)$
 3. Temperature optimum: $0 ^{\circ}\mathrm{C}$
 
 Code is as follows (Lines 451 onward of `code/parallelized_historic_run.R`)
@@ -31,7 +31,24 @@ Ran `code/2026_06_18_copy_em_sensitivity_analysis.R` (a sequential version of th
 for the temperature optima and trend configurations.
 
 1. Temperature trend: $0 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$
-2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$
+2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.5)$
 3. Temperature optimum: $0 ^{\circ}\mathrm{C}$
 
 This seems to work now!
+
+
+## 06/24/2026 model runs
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+1. Temperature trend: $0.04 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$
+2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$
+3. Temperature optimum: $-1.5 ^{\circ}\mathrm{C}$
+
+Used following configurations
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|------------------	|
+|  0.2                    | 6               | 2                 |
+
+
