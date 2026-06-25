@@ -111,7 +111,16 @@ where \(\bar N_1\) denotes mean recruitment on the natural scale and \(\epsilon_
 We evaluated three estimation models (EMs), each treated as a management procedure (MP) within the MSE. All EMs used the same WHAM numbers-at-age structure (Eq. \eqref{eq:wham_naa}), assumed AR(1) recruitment deviations (Eq. \eqref{eq:rec_ar1_biascorr}), and used the two-sigma process error structure (Eq. \eqref{eq:two_sigma}), unless otherwise specified. The EMs differed in how Ecov was treated and whether recruitment depended on Ecov. The baseline EM was defined as the simplest model (no Ecov), followed by EMs that incorporate Ecov in different ways.
 
 
-### EM-0 (baseline): no Ecov included
+### EM-1 (Linear relationship between recruitment and temperature)
+
+EM-1 uses an existing option in whamMSE where a linear relationship between recrutiment-temperature is estimated. Recruitment is defined as: 
+
+\begin{equation}
+\log N_{1,y} = \log(\bar N_1) + \beta_RX_{t-\ell} + \epsilon_{1,y}, \epsilon_{1,y} \sim N(0, sigma_R^2)
+\label{eq:em3_rec}
+\end{equation}
+
+### EM-2 (baseline): no Ecov included
 
 The baseline EM omitted Ecov entirely. Recruitment was modeled with a mean term and recruitment deviations:
 
@@ -122,9 +131,10 @@ The baseline EM omitted Ecov entirely. Recruitment was modeled with a mean term 
 
 Because Ecov was not included, EM-0 did not require Ecov values for projection years.
 
-### EM-1 (true-link benchmark): Gaussian recruitment–temperature link with fixed parameters
 
-EM-1 represented a best-case benchmark in which the EM uses the same Gaussian recruitment–temperature relationship as the OM. The Gaussian parameters \((T_{\text{opt}}, w_{\text{opt}})\) were treated as fixed and known in EM-1 (i.e., not estimated). Using the observed Ecov series \(x_y\) available to the EM, the multiplier was:
+### EM-3 (true-link benchmark): Gaussian recruitment–temperature link with fixed parameters
+
+EM-3 represented a best-case benchmark in which the EM uses the same Gaussian recruitment–temperature relationship as the OM. The Gaussian parameters \((T_{\text{opt}}, w_{\text{opt}})\) were treated as fixed and known in EM-3 (i.e., not estimated). Using the observed Ecov series \(x_y\) available to the EM, the multiplier was:
 
 \begin{equation}
 t_y^{\text{EM}} =
@@ -142,39 +152,6 @@ Recruitment was then:
 \end{equation}
 
 In forecast years, EM-1 used the scenario-defined “true” future temperature directly (i.e., \(x_y=X_y^{\text{true}}\) in projection years), so that projected recruitment reflected the scenario temperature trajectory without additional EM-level filtering.
-
-### EM-2: Ecov AR(1) state-space model with observation error, no recruitment–Ecov relationship
-
-EM-2 included Ecov as a latent AR(1) state-space process with observation error, but assumed no relationship between Ecov and recruitment. Let \(X_y\) denote the latent Ecov state and \(x_y\) the observed Ecov input. The Ecov process was:
-
-\begin{equation}
-X_1 \sim \mathcal{N}\left(\mu_{\text{Ecov}},\;\frac{\sigma_{\text{Ecov}}^2}{1-\rho_{\text{Ecov}}^2}\right),
-\label{eq:em_ecov_init}
-\end{equation}
-
-\begin{equation}
-X_y \mid X_{y-1} \sim \mathcal{N}\left(\mu_{\text{Ecov}}(1-\rho_{\text{Ecov}})+\rho_{\text{Ecov}}X_{y-1},\;\sigma_{\text{Ecov}}^2\right),\quad y=2,\ldots,Y,
-\label{eq:em_ecov_ar1}
-\end{equation}
-
-and the observation model was:
-
-\begin{equation}
-x_y \mid X_y \sim \mathcal{N}\left(X_y,\;\sigma_x^2\right).
-\label{eq:em_ecov_obs}
-\end{equation}
-
-Recruitment in EM-2 was independent of Ecov and followed Eq. \eqref{eq:em0_rec}. In forecast years, EM-2 generated future Ecov states by continuing the fitted AR(1) process forward using Eq. \eqref{eq:em_ecov_ar1}. Although Ecov did not affect recruitment in EM-2, this continuation ensured that projected Ecov dynamics remained internally consistent with the EM’s assumed state-space structure.
-
-### EM-3 (Linear relationship between recruitment and temperature)
-
-EM-3 uses an existing option in whamMSE where a linear relationship between recrutiment-temperature is estimated. Recruitment is defined as: 
-
-\begin{equation}
-\log N_{1,y} = \log(\bar N_1) + \beta_RX_{t-\ell} + \epsilon_{1,y}, \epsilon_{1,y} \sim N(0, sigma_R^2)
-\label{eq:em3_rec}
-\end{equation}
-
 
 ## Harvest control rule and reference point calculation
 
@@ -203,7 +180,7 @@ The MSE followed a closed-loop feedback design. At each assessment year, simulat
 
 ## Stochastic realizations and performance evaluation
 
-We generated 100 independent stochastic realizations to quantify uncertainty and ensure that results were not driven by a single stochastic outcome. Each realization represented an independent draw of process and observation errors, including recruitment deviations, numbers-at-age transition deviations, and observation error in the Ecov series (Eq. \eqref{eq:om_ecov_obs}). As a result, each realization produced unique population dynamics and observation datasets.
+We generated 100 independent stochastic realizations (__This is yet to be done__) to quantify uncertainty and ensure that results were not driven by a single stochastic outcome. Each realization represented an independent draw of process and observation errors, including recruitment deviations, numbers-at-age transition deviations, and observation error in the Ecov series (Eq. \eqref{eq:om_ecov_obs}). As a result, each realization produced unique population dynamics and observation datasets.
 
 Within each realization, all three EMs (management procedures) were applied to the same underlying OM trajectory, which enabled within-realization comparisons of management performance among EMs. Performance metrics were recorded for each EM and realization and included spawning stock biomass (SSB), total and fleet-specific catch, and indicators of overfishing (e.g., the probability that realized \(F\) exceeded \(F_{40\%}\)). Metrics were summarized across the 100 realizations to provide robust estimates of expected performance and trade-offs among EM structures under environmentally driven recruitment dynamics.
 
@@ -221,6 +198,6 @@ We configured different values for each parameter with
 
 1. \(\sigma_{\text{NAA}} = \{0.2, 0.5, 1.0\}\), where 0.2 is realistic for most stocks in the Northeast and 1 is quite high and rather unrealistic
 2.  \(t_{\text{g}} = \{3\ \text{years}, 6\ \text{years}\}\)
-3.  \(w_{\text{opt}} = \{0.5, 1, 2k\}\) where 0.1 is an extremely narrow temperature response curve and 5 is very generous and will give good recruitment responses even to temperatures far from optimal value.
+3.  \(w_{\text{opt}} = \{0.5, 1, 2, 5\}\) where 0.1 is an extremely narrow temperature response curve and 5 is very generous and will give good recruitment responses even to temperatures far from optimal value.
 
 
