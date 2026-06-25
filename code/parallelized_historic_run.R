@@ -45,13 +45,13 @@ run_env <- run_env_opts[1]
 # Set iterations, a base random seed, and then generate seeds for each MSE run
 # Set a model name
 # NOTE: NOT USING THESE SETTINGS FOR THE SENSITIVITY ANALYSIS
-iterations <- 24 # This is the number of parallel realizations that will run
+iterations <- 100 # This is the number of parallel realizations that will run
 base_random_seed <- 853
 set.seed(base_random_seed)
 # mse_random_seeds <- as.integer(floor(runif(iterations, min=0, max=1000))) # Standard method for deriving the seeds
 mse_random_seeds <- sample(1:1e6, size=iterations, replace= FALSE) # New method for deriving seeds accounting for duplicates
 model_name <- "BSB Ecov"
-n_feedback_years <- 12
+n_feedback_years <- 30
 
 # Make the seeds into a dataframe and save
 random_seeds_df <- data.frame(n_seed=mse_random_seeds) %>% mutate(nid=row_number(), .before=1)
@@ -66,7 +66,7 @@ random_seeds_df <- data.frame(n_seed=mse_random_seeds) %>% mutate(nid=row_number
 
 proc_error_v <- c(0.2) # Process error for NAA random effects. We keep a low value here to see that allows us to see difference in model performance
 mse_gaps_v <- c(6) # Time between assessments for MSE
-gauss_width_v <- c(2) # Width of the gaussian relationship (Wider = Less sensitive to optimal temperature)
+gauss_width_v <- c(1,2) # Width of the gaussian relationship (Wider = Less sensitive to optimal temperature)
 total_comb_no <- length(proc_error_v)*length(mse_gaps_v)*length(gauss_width_v)
 
 # Use `crossing` function from tidyr to create a dataframe of all the settings in the
@@ -383,7 +383,7 @@ if(DO_ANALYSIS){
         temp_vec <- input_Ecov$data$Ecov_obs[, temp_col]
         
         # WE need to specify clearly
-        input_Ecov$par$Topt_rec      <- 0          # peak at 0
+        input_Ecov$par$Topt_rec      <- 0          # peak at 0 (Historical mean)
         #### SENSITIVITY ANALYSIS POINT 2 ####
         input_Ecov$par$log_width_rec <- log(gauss_width)     # width whatever we set
         n_stocks <- input_Ecov$data$n_stocks
@@ -445,7 +445,7 @@ if(DO_ANALYSIS){
         )
         
         #### 9. FORCE Ecov_re pattern: -2 to +2, 1989-2023 ####
-        #### Ecov_re pattern for 2024 onward ####
+        # Ecov_re pattern for 2024 onward
         
         # Historical Ecov_re, e.g. 1959–2023
         Ecov_re <- OMa$parList$Ecov_re[, 1, drop = FALSE]
@@ -464,11 +464,12 @@ if(DO_ANALYSIS){
         
         # First, fill historical Ecov_re
         input_Ecov$par$Ecov_re[1:n_hist, 1] <- Ecov_re[, 1]
+        last_ecov_temp <- input_Ecov$par$Ecov_re[n_hist,1]
         
         # Then force increasing trend for 2024 onward
-        ecov_proj_error <- rnorm(n = n_proj, mean = 0, sd = 0.5)
+        ecov_proj_error <- rnorm(n = n_proj, mean = 0, sd = 0.05)
         
-        input_Ecov$par$Ecov_re[proj_idx, 1] <- 0.04 * seq_len(n_proj) + ecov_proj_error
+        input_Ecov$par$Ecov_re[proj_idx, 1] <- 0.04 * seq_len(n_proj) + last_ecov_temp + ecov_proj_error
         
         png(here(folder_path_plots, paste(run_id,"_",iter_id,"_ecov_re.png", sep="")), width=600, height=600)
         plot(input_Ecov$par$Ecov_re, type = "l")
