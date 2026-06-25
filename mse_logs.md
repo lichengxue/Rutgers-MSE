@@ -651,12 +651,7 @@ at 0 (historical mean) instead of the last recorded temperature. This is fixed n
 in detail.
 
 <p align="center">
-  <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/ecov_re_fix_for_github_notes.png.png" />
+  <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/ecov_re_fix_for_github_notes.png" />
   <br>
   Figure 1 - Fix implemented on how future temperature projections are incorporated into the timeseries
 </p>
-
-
-
-
-
