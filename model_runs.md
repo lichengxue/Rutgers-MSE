@@ -39,6 +39,8 @@ This seems to work now!
 
 ## 06/24/2026 model runs
 
+### Run 1 - 
+
 Ran `code/parallelized_historic_run.R` with the following configurations.
 
 1. Temperature trend: $0.04 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$
@@ -50,5 +52,66 @@ Used following configurations
 | $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $w_{\text{opt}}$ 	|
 |-----------------------	|----------------	|------------------	|
 |  0.2                    | 6               | 2                 |
+
+Model objects, logs, outputs, and visualizations saved to the following location: `models/sensitivity_analysis/2026-06-24_10-10-02/`
+
+### Run 2 - 
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+1. Temperature trend: $0.04 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$
+2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$
+3. Temperature optimum: $-1.5 ^{\circ}\mathrm{C}$
+
+Used following configurations
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|------------------	|
+|  0.2                    | 6               | 1                 |
+
+
+
+## 06/25/2026 model runs
+
+### Run 1 
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+1. Temperature trend: $0.04 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1} + \epsilon_{y}$
+2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$
+3. Temperature optimum (Standardized): $0 ^{\circ}\mathrm{C}$
+
+Used following configurations
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|------------------	|
+|  0.2                    | 6               | 1,2               |
+
+_Ran for 100 iterations using 6 parallel cores_
+
+Model objects, logs, outputs, and visualizations saved to the 
+following location: `models/sensitivity_analysis/2026-06-25_01-53-08`
+
+*Note*: Interrupted the run around the 50th iteration of the first configuration.
+
+### Run 2
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+1. Temperature trend: $0.04 ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1} + \epsilon_{y}$
+2. Error term: $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$
+3. Temperature optimum (Standardized): $0 ^{\circ}\mathrm{C}$
+
+Used following configurations
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|------------------	|
+|  0.2                    | 6               | 2                 |
+
+_Ran for 100 iterations using 6 parallel cores_
+
+Model objects, logs, outputs, and visualizations saved to the 
+following location: `models/sensitivity_analysis/2026-06-25_09-18-13`.
+All 100 iterations were run and then visualized. Looks OK. 
 
 
