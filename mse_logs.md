@@ -675,3 +675,13 @@ Installed `TMB` as a dependency.
 
 Getting an error running `code/parallelized_historic_run.R`. Similar to the one I'm getting on the Windows Annotate2 Server.
 
+Seems to be an issue related to `TMB` package.
+
+```{r}
+Error: package or namespace load failed for ‘TMB’:
+ .onLoad failed in loadNamespace() for 'TMB', details:
+  call: dyn.load(file, DLLpath = DLLpath, ...)
+  error: unable to load shared object '/Users/jeewanthabandara/Library/Caches/org.R-project.R/R/renv/cache/v5/macos/R-4.6/aarch64-apple-darwin23/TMB/1.9.21/62a5714b9af765a4c286f4e447d44cea/TMB/libs/TMB.so':
+  dlopen(/Users/jeewanthabandara/Library/Caches/org.R-project.R/R/renv/cache/v5/macos/R-4.6/aarch64-apple-darwin23/TMB/1.9.21/62a5714b9af765a4c286f4e447d44cea/TMB/libs/TMB.so, 0x0006): symbol not found in flat namespace '_omp_get_max_threads'
+```
+
