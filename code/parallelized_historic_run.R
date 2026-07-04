@@ -66,7 +66,7 @@ random_seeds_df <- data.frame(n_seed=mse_random_seeds) %>% mutate(nid=row_number
 
 proc_error_v <- c(0.2) # Process error for NAA random effects. We keep a low value here to see that allows us to see difference in model performance
 mse_gaps_v <- c(6) # Time between assessments for MSE
-gauss_width_v <- c(1,2) # Width of the gaussian relationship (Wider = Less sensitive to optimal temperature)
+gauss_width_v <- c(2) # Width of the gaussian relationship (Wider = Less sensitive to optimal temperature)
 total_comb_no <- length(proc_error_v)*length(mse_gaps_v)*length(gauss_width_v)
 
 # Use `crossing` function from tidyr to create a dataframe of all the settings in the
