@@ -655,3 +655,11 @@ in detail.
   <br>
   Figure 1 - Fix implemented on how future temperature projections are incorporated into the timeseries
 </p>
+
+Line 472 in commit -  https://github.com/lichengxue/Rutgers-MSE/commit/02f8db450e54ecb33a299760573dea5da0620855
+
+## 06/25/2026 log
+
+Ran several models. Check `model_runs.md` for detailed notes on those.
+Discussed with John about simplifying some of the temperature optima and the trends.
+
