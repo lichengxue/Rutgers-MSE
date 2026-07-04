@@ -663,3 +663,15 @@ Line 472 in commit -  https://github.com/lichengxue/Rutgers-MSE/commit/02f8db450
 Ran several models. Check `model_runs.md` for detailed notes on those.
 Discussed with John about simplifying some of the temperature optima and the trends.
 
+
+## 07/04/2026 log [Server log]
+
+** WRITING THIS FROM THE SERVER SIDE **
+
+Setting up the server to run the code. Use `renv` package to maintain packages 
+and dependencies in a local/contained folder.
+
+Installed `TMB` as a dependency.
+
+Getting an error running `code/parallelized_historic_run.R`. Similar to the one I'm getting on the Windows Annotate2 Server.
+
