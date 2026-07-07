@@ -685,3 +685,26 @@ Error: package or namespace load failed for ‘TMB’:
   dlopen(/Users/jeewanthabandara/Library/Caches/org.R-project.R/R/renv/cache/v5/macos/R-4.6/aarch64-apple-darwin23/TMB/1.9.21/62a5714b9af765a4c286f4e447d44cea/TMB/libs/TMB.so, 0x0006): symbol not found in flat namespace '_omp_get_max_threads'
 ```
 
+## 07/07/2026 log
+
+The issue regarding running the code on a server seems to be related to how `renv` 
+package masks several C++ libraries from the `TMB` package. The issue is that 
+`TMB` gets installed, but it's corrupted. I initially thought that this was related 
+to an issue with `gfortran` library. I'm listing all the steps/fixes I tried below.
+
+1. Set up an `renv` environment inside a fresh project on the server.
+2. Installed `TMB`, `wham`, `whamMSE`, and `SPASAM.MSE` into this environment.
+3. Ran `code/parallelized_historic_run.R`. Gave the following error regarding `OpenMP` linking.
+```{r}
+Error: package or namespace load failed for ‘TMB’:
+ .onLoad failed in loadNamespace() for 'TMB', details:
+  call: dyn.load(file, DLLpath = DLLpath, ...)
+  error: unable to load shared object '/Users/jeewanthabandara/Library/Caches/org.R-project.R/R/renv/cache/v5/macos/R-4.6/aarch64-apple-darwin23/TMB/1.9.21/62a5714b9af765a4c286f4e447d44cea/TMB/libs/TMB.so':
+  dlopen(/Users/jeewanthabandara/Library/Caches/org.R-project.R/R/renv/cache/v5/macos/R-4.6/aarch64-apple-darwin23/TMB/1.9.21/62a5714b9af765a4c286f4e447d44cea/TMB/libs/TMB.so, 0x0006): symbol not found in flat namespace '_omp_get_max_threads'
+```
+4. 
+
+**NOTE**: The quick fix is simple. Simply installed `TMB`, `wham`, `whamMSE`, and `SPASAM.MSE` 
+outside of `renv` (Directly to base R). This removes all the advantages of `renv`, but it works.
+
+
