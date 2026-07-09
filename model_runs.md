@@ -118,11 +118,9 @@ All 100 iterations were run and then visualized. Looks OK.
 
 Ran `code/parallelized_historic_run.R` with the following configurations.
 
-| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $t$ ($^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$) 	| $\epsilon_{y}$ 	| $t_{\text{opt}}$ ($^{\circ}\mathrm{C}$) 	| $w_{\text{opt}}$ 	|
-|-----------------------	|----------------	|----------------------------------------------	|----------------	|-----------------------------------------	|------------------	|
-| 0.2                   	| 6              	| 0.0, 0.04, 0.1                               	| 0.75           	| -1.5, 0, 2.5                            	| 2                	|
-
-
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $t$ ($^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$) 	| $\epsilon_{y}$                           	| $t_{\text{opt}}$ ($^{\circ}\mathrm{C}$) 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|----------------------------------------------	|------------------------------------------	|-----------------------------------------	|------------------	|
+| 0.2                   	| 6              	| 0.0, 0.04, 0.1                               	| $\epsilon_{y} \sim \mathcal{N}(0, 0.05)$ 	| -1.5, 0, 2.5                            	| 2                	|
 _Ran for 120 iterations using 8 parallel cores_
 
 Model objects, logs, outputs, and visualizations saved to the 
