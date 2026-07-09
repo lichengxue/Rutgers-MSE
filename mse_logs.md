@@ -708,3 +708,11 @@ Error: package or namespace load failed for ‘TMB’:
 outside of `renv` (Directly to base R). This removes all the advantages of `renv`, but it works.
 
 
+## 07/08/2026 log
+
+| Before 	| After 	|
+|--------	|-------	|
+| <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered.png" />       	| <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered_3.png" />             	|
+
+
+
