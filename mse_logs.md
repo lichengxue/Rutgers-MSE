@@ -721,7 +721,7 @@ The following table shows how the scenarios were simplified.
 
 | Before 	| After 	|
 |--------	|-------	|
-| <img width="350" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered.png" />       	| <img width="350" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered_3.png" />             	|
+| <img width="500" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered.png" />       	| <img width="500" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered_3.png" />             	|
 
 
 
