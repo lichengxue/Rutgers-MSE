@@ -710,6 +710,15 @@ outside of `renv` (Directly to base R). This removes all the advantages of `renv
 
 ## 07/08/2026 log
 
+Future scenarios for temperature projections has been updated. The following changes are now in effect.
+
+1. Temperature trends ($t$) are now as follows: $\[0.04,0.102,0.0\] ^{\circ}\mathrm{C}\,\mathrm{yr}^{-1} + \epsilon_{y}$
+2. Stochasticity (as determined by error term $\epsilon_y$) of all temperature trends are now same as the stochasticity in the last 10 years of the historical trend
+3. Number of hypothetical temperature optima has been reduced. Now as follows: $\[0,-1.5, 2.5\] ^{\circ}\mathrm{C}$
+
+The following table shows how the scenarios were simplified.
+
+
 | Before 	| After 	|
 |--------	|-------	|
 | <img width="350" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered.png" />       	| <img width="350" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered_3.png" />             	|
