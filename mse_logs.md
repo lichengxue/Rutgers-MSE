@@ -712,7 +712,7 @@ outside of `renv` (Directly to base R). This removes all the advantages of `renv
 
 | Before 	| After 	|
 |--------	|-------	|
-| <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered.png" />       	| <img width="60%" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered_3.png" />             	|
+| <img width="50" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered.png" />       	| <img width="50" src="https://github.com/lichengxue/Rutgers-MSE/blob/dev/images/temperature_trends_and_optima_gathered_3.png" />             	|
 
 
 
