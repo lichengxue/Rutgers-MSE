@@ -6,7 +6,7 @@
 #
 #
 # Author(s): RMWJ Bandara, Chengxue Li
-# Date: 2026/05/18 (Last update on 2026/06/17)
+# Date: 2026/05/18 (Last update on 2026/07/16)
 # Runtime environment: MacOS Sequoia 15.5 on M-chip Macbook Pro, R version 4.4.1
 #
 #
@@ -24,11 +24,19 @@ library(beepr)
 library(readr)
 library(doParallel)
 library(stringr)
+library(purrr)
 
 here::here()
 
 # model_run <- "2026-05-26_11-15-55"
-model_run <- "2026-06-17_09-50-46"
+# model_run <- "2026-06-18_16-33-58"
+# model_run <- "2026-06-19_12-52-15"
+# model_run <- "2026-06-23_13-33-03"
+# model_run <- "2026-06-24_10-10-02"
+# model_run <- "2026-06-24_11-34-32"
+# model_run <- "2026-06-25_09-18-13"
+model_run <- "2026-07-07_13-48-04"
+
 
 all_model_files <- list.files(path=here("models","sensitivity_analysis",model_run,"models"), 
                           pattern="\\.RDS$", 
@@ -79,6 +87,7 @@ parse_error_filename <- function(fname) {
 
 valid_model_df <- do.call(rbind, lapply(all_model_files, parse_filename))
 error_model_df <- do.call(rbind, lapply(all_model_files, parse_error_filename))
+model_df <- NULL
 print(valid_model_df)
 print(error_model_df)
 if(!is.null(valid_model_df)){
@@ -89,7 +98,16 @@ if(!is.null(error_model_df)){
   error_model_df <- error_model_df %>% mutate(success="No")
 }
 
-model_df <- rbind(valid_model_df, error_model_df)
+# New data frame that will hold all the valid model runs
+model_df <- valid_model_df
+
+# Make sure that unconverging iterations are dropped
+if(!is.null(error_model_df)){
+  unconverged_iterations <- error_model_df %>% select(iter_id) %>% distinct() %>% pull()
+  model_df <- model_df %>% filter(!iter_id %in% unconverged_iterations)
+}
+
+# model_df <- rbind(valid_model_df, error_model_df)
 
 # Introduce other parameters such as resulting file size in there
 model_df$size_mb <- round(file.info(model_df$filename)$size / 1024^2, 2)
@@ -105,6 +123,14 @@ write.csv(model_df, here("models","sensitivity_analysis",model_run,"model_meta_i
 
 # Select only the readable models
 model_df <- model_df %>% filter(success=="Yes")
+
+# Calculate the convergence rate
+config_file <- read_csv(here("models","sensitivity_analysis",model_run,"model_configs.csv"))
+config_iters <- config_file %>% filter(config=="iterations") %>% select(val) %>% pull()
+converged_iters <- model_df %>% distinct(iter_id) %>% count() %>% pull()
+convergence_rate <- converged_iters/config_iters*100
+print(paste("Convergence rate was",round(convergence_rate),"% with",converged_iters,
+            "converging from a total of",config_iters,"seeds", sep=" "))
 
 # Condense these into a list (run settings) of list (models) of lists (iterations/seeds) of
 # configurations (runs)
@@ -140,12 +166,71 @@ for(i in 1:model_list_length){
                   output_format = c("html"), # or html or png
                   width = 10, height = 7, dpi = 300,
                   col.opt = "D",
+                  new_model_names = c("Linear relationship","No relationship","Gaussian relationship"),
+                  base.model = "No relationship",
+                  start.years = 36, # This starts at 36. But check. 2023 is the start year of assessment
+                  use.n.years.first = 5,
+                  use.n.years.last = 5
                   # new_model_names = c("M1","M2","M3","M4","M5"),
                   # base.model = "M1",
-                  # start.years = 31,
-                  # use.n.years.first = 5,
-                  # use.n.years.last = 5
   )
-  
 }
+
+
+#### Inter-model comparison between models for different configurations ####
+
+# Get the model settings
+model_settings <- read_csv(here("models","sensitivity_analysis",model_run,"all_model_settings.csv"))
+model_settings <- model_settings %>% group_by(run_id) %>% 
+  slice_head(n=1) %>% 
+  ungroup() %>% 
+  select(-c(model, model_path))
+model_settings <- model_settings %>% mutate(run_name=paste("Run-",run_id, sep=""), .after=1)
+
+
+# Read in the `mse_performance_summary.csv` files for each of the runs and bind them together
+model_result_summaries <- model_settings$run_name |>
+  map(\(rn) {
+    f <- here("models", "sensitivity_analysis", model_run, "model-reports",
+              rn, "mse_performance_summary.csv")   # adjust name per above
+    if (!file.exists(f)) return(NULL)
+    read_csv(f) |> mutate(run_name = rn, .before=1)
+  }) |>
+  bind_rows()
+
+# The unique stats computed for the models during `plot_mse_output`
+model_result_summaries %>% distinct(metric_detail)
+model_result_summaries %>% distinct(metric)
+
+
+##### Catch in the last 5 years #####
+catch_last_results <- model_result_summaries %>% filter(metric=="Catch_last")
+
+
+ggplot(catch_last_results, aes(x = run_name, fill = Model)) +
+  geom_boxplot(
+    aes(ymin = min, lower = q1, middle = median, upper = q3, ymax = max),
+    stat = "identity",
+    position = position_dodge(width = 0.8),
+    width = 0.7
+  ) +
+  labs(x = "Model configuration", y = "Catch in the last 5 years") +
+  theme_bw()
+
+
+##### SSB #####
+
+ssb_results <- model_result_summaries %>% filter(metric=="SSB" & level=="global" & period=="from_start_to_end")
+
+
+ggplot(ssb_results, aes(x = run_name, fill = Model)) +
+  geom_boxplot(
+    aes(ymin = min, lower = q1, middle = median, upper = q3, ymax = max),
+    stat = "identity",
+    position = position_dodge(width = 0.8),
+    width = 0.7
+  ) +
+  labs(x = "Model configuration", y = "SSB") +
+  theme_bw()
+
 
