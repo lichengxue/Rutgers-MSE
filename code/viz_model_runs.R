@@ -198,16 +198,20 @@ model_result_summaries <- model_settings$run_name |>
   }) |>
   bind_rows()
 
+# Introduce a new column (scenario) - Simply for naming/cleanliness purposes
+model_result_summaries <- model_result_summaries %>% 
+  mutate(scenario = str_replace(run_name, "Run", "Scenario"))
+
 # The unique stats computed for the models during `plot_mse_output`
 model_result_summaries %>% distinct(metric_detail)
-model_result_summaries %>% distinct(metric)
+print(model_result_summaries %>% distinct(metric), n=25)
 
 
 ##### Catch in the last 5 years #####
 catch_last_results <- model_result_summaries %>% filter(metric=="Catch_last")
 
 
-ggplot(catch_last_results, aes(x = run_name, fill = Model)) +
+ggplot(catch_last_results, aes(x = scenario, fill = Model)) +
   geom_boxplot(
     aes(ymin = min, lower = q1, middle = median, upper = q3, ymax = max),
     stat = "identity",
@@ -223,7 +227,7 @@ ggplot(catch_last_results, aes(x = run_name, fill = Model)) +
 ssb_results <- model_result_summaries %>% filter(metric=="SSB" & level=="global" & period=="from_start_to_end")
 
 
-ggplot(ssb_results, aes(x = run_name, fill = Model)) +
+ggplot(ssb_results, aes(x = scenario, fill = Model)) +
   geom_boxplot(
     aes(ymin = min, lower = q1, middle = median, upper = q3, ymax = max),
     stat = "identity",
@@ -233,4 +237,18 @@ ggplot(ssb_results, aes(x = run_name, fill = Model)) +
   labs(x = "Model configuration", y = "SSB") +
   theme_bw()
 
+##### SSB - AAV #####
+
+ssb_aav_results <- model_result_summaries %>% filter(metric=="SSB" & metric_detail=="AAV" & level=="global")
+
+
+ggplot(ssb_aav_results, aes(x = scenario, fill = Model)) +
+  geom_boxplot(
+    aes(ymin = min, lower = q1, middle = median, upper = q3, ymax = max),
+    stat = "identity",
+    position = position_dodge(width = 0.8),
+    width = 0.7
+  ) +
+  labs(x = "Model configuration", y = "SSB [Average Annual Variation]") +
+  theme_bw()
 
