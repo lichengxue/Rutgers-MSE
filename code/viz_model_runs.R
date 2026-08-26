@@ -92,16 +92,33 @@ print(valid_model_df)
 print(error_model_df)
 if(!is.null(valid_model_df)){
   valid_model_df <- valid_model_df %>% mutate(success="Yes")
-  
 }
 if(!is.null(error_model_df)){
   error_model_df <- error_model_df %>% mutate(success="No")
 }
 
+# Go through run by run to see the convergence rates
+gathered_models <- rbind(valid_model_df, error_model_df)
+
+gathered_models %>% group_by(run) %>% 
+  summarise(converge_rate = mean(success == "Yes") * 100)
+
+# Which models usually gave the issue
+gathered_models %>% group_by(run, mod) %>% 
+  summarise(converge_rate = mean(success == "Yes") * 100)
+
+# Did a specific iteration/seed give issues across all runs and models
+gathered_models %>% group_by(run, mod, iter_id) %>% 
+  summarise(converge_rate = mean(success == "Yes") * 100) %>% arrange(converge_rate, run, mod, iter_id)
+
+
+
+
 # New data frame that will hold all the valid model runs
 model_df <- valid_model_df
 
-# Make sure that unconverging iterations are dropped
+# Make sure that corresponding unconverging iterations are dropped 
+# from even the valid model runs
 if(!is.null(error_model_df)){
   unconverged_iterations <- error_model_df %>% select(iter_id) %>% distinct() %>% pull()
   model_df <- model_df %>% filter(!iter_id %in% unconverged_iterations)
@@ -206,6 +223,19 @@ model_result_summaries <- model_result_summaries %>%
 model_result_summaries %>% distinct(metric_detail)
 print(model_result_summaries %>% distinct(metric), n=25)
 
+# There are different details that's specifically computed for each metric
+print(model_result_summaries %>% distinct(metric, metric_detail) %>% 
+        arrange(metric, metric_detail), n=50)
+
+# They are also computed for both local and global levels
+# There are different details that's specifically computed for each metric
+print(model_result_summaries %>% distinct(metric, metric_detail, level) %>% 
+        arrange(metric, metric_detail), n=50)
+
+# They are also computed for different time periods
+print(model_result_summaries %>% distinct(metric, metric_detail, level, period) %>% 
+        arrange(metric, metric_detail), n=75)
+
 
 ##### Catch in the last 5 years #####
 catch_last_results <- model_result_summaries %>% filter(metric=="Catch_last")
@@ -251,4 +281,21 @@ ggplot(ssb_aav_results, aes(x = scenario, fill = Model)) +
   ) +
   labs(x = "Model configuration", y = "SSB [Average Annual Variation]") +
   theme_bw()
+
+##### SSB - AAV: Across all periods and geographic scales #####
+
+ssb_aav <- model_result_summaries %>% filter(metric=="SSB" & metric_detail=="AAV")
+
+ggplot(ssb_aav, aes(x = scenario, fill = Model)) +
+  geom_boxplot(
+    aes(ymin = min, lower = q1, middle = median, upper = q3, ymax = max),
+    stat = "identity",
+    position = position_dodge(width = 0.8),
+    width = 0.7
+  ) +
+  labs(x = "Model configuration", y = "SSB [Average Annual Variation]") +
+  facet_wrap(~level + period) + 
+  theme_bw()
+
+
 
