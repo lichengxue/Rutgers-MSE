@@ -114,7 +114,7 @@ Model objects, logs, outputs, and visualizations saved to the
 following location: `models/sensitivity_analysis/2026-06-25_09-18-13`.
 All 100 iterations were run and then visualized. Looks OK. 
 
-## 07/08/2026 model runs [Still running]
+## 07/08/2026 model runs
 
 Ran `code/parallelized_historic_run.R` with the following configurations.
 
@@ -129,4 +129,63 @@ Model objects, logs, outputs, and visualizations saved to the
 following location: `models/sensitivity_analysis/2026-07-08_17-45-13`.
 
 There seems to be some convergence issues with the 0.0 trend. Investigate as to why that might be.
+
+
+## 08/26/2026 model runs
+
+These are short runs being done to compare some diagnostics on if the packages have 
+been updated correctly and if separate model runs can be appended and visualized 
+to one another.
+
+_These models are being run on the server (Mac Mini)_
+
+### Model Run 1 ###
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $t$ ($^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$) 	| $\epsilon_{y}$                           	| $t_{\text{opt}}$ ($^{\circ}\mathrm{C}$) 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|----------------------------------------------	|------------------------------------------	|-----------------------------------------	|------------------	|
+| 0.2                   	| 6              	| 0.04                               	          | $\epsilon_{y} \sim \mathcal{N}(0.5)$ 	    | 0                            	            | 2                	|
+
+
+_Ran for 8 iterations using 8 parallel cores_
+
+Model objects, logs, outputs, and visualizations saved to the 
+following location: `models/sensitivity_analysis/2026-08_26-00-58-26`.
+
+
+### Model Run 2 ###
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $t$ ($^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$) 	| $\epsilon_{y}$                           	| $t_{\text{opt}}$ ($^{\circ}\mathrm{C}$) 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|----------------------------------------------	|------------------------------------------	|-----------------------------------------	|------------------	|
+| 0.2                   	| 6              	| 0.1                               	          | $\epsilon_{y} \sim \mathcal{N}(0.5)$ 	    | 0                            	            | 2                	|
+
+
+_Ran for 8 iterations using 8 parallel cores_
+
+Model objects, logs, outputs, and visualizations saved to the 
+following location: `models/sensitivity_analysis/2026-08_26-01-25-38`.
+
+### Model Run 3 ###
+
+Same as Model Run 2. The only change being `save.last.em` in the `loop_through_fn` 
+function set to FALSE instead of TRUE.
+
+Ran `code/parallelized_historic_run.R` with the following configurations.
+
+| $\sigma_{\text{NAA}}$ 	| $t_{\text{g}}$ 	| $t$ ($^{\circ}\mathrm{C}\,\mathrm{yr}^{-1}$) 	| $\epsilon_{y}$                           	| $t_{\text{opt}}$ ($^{\circ}\mathrm{C}$) 	| $w_{\text{opt}}$ 	|
+|-----------------------	|----------------	|----------------------------------------------	|------------------------------------------	|-----------------------------------------	|------------------	|
+| 0.2                   	| 6              	| 0.1                               	          | $\epsilon_{y} \sim \mathcal{N}(0.5)$ 	    | 0                            	            | 2                	|
+
+
+_Ran for 8 iterations using 8 parallel cores_
+
+Model objects, logs, outputs, and visualizations saved to the 
+following location: `models/sensitivity_analysis/2026-08_26-02-50-01`.
+
+
+__There does seem to be a difference between the actual outputs between Model Run 3 and 2_. 
+Talk about Cheng with this.
 
